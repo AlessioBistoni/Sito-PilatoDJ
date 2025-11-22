@@ -1,6 +1,6 @@
 # Setup Vercel per Francesco Pilato DJ Website
 
-Questa guida ti aiuterà a configurare Vercel Blob Storage e Vercel KV per il sito.
+Questa guida ti aiuterà a configurare Vercel Blob Storage e Vercel Postgres per il sito.
 
 ## Prerequisiti
 
@@ -11,7 +11,8 @@ Questa guida ti aiuterà a configurare Vercel Blob Storage e Vercel KV per il si
 
 ⚠️ **Importante**: 
 - **Blob Storage** è disponibile tramite il **Marketplace** di Vercel (metodo consigliato)
-- **KV** NON è disponibile nel Marketplace e deve essere configurato tramite il metodo tradizionale in **Settings** → **Storage**
+- **Postgres** è disponibile tramite il **Marketplace** di Vercel (metodo consigliato)
+- Entrambi possono essere configurati facilmente dal Marketplace
 
 ## Step 1: Configurare Vercel Blob Storage
 
@@ -45,33 +46,43 @@ Dopo aver creato il Blob Storage:
 
 Se non vedi queste variabili, vai su **Storage** → **Blob** → **Settings** e copia il token.
 
-## Step 2: Configurare Vercel KV
+## Step 2: Configurare Vercel Postgres
 
-Vercel KV è necessario per salvare i dati (date, gallery, blog posts).
+Vercel Postgres è necessario per salvare i dati (date, gallery, blog posts).
 
-⚠️ **Nota**: KV non è disponibile tramite il Marketplace. Devi usare il metodo tradizionale.
-
-### Configurazione KV
+### Metodo tramite Marketplace (Consigliato)
 
 1. Vai sul tuo progetto su [Vercel Dashboard](https://vercel.com/dashboard)
-2. Vai su **Settings** → **Storage**
-3. Clicca su **Create Database** o **Add Storage**
-4. Seleziona **KV** (Redis)
-5. Scegli un nome (es: `pilato-dj-kv`)
+2. Vai su **Storage** → **Marketplace** (o cerca "Marketplace" nella barra laterale)
+3. Cerca **"Postgres"** o **"Vercel Postgres"**
+4. Clicca su **Add** o **Install**
+5. Scegli un nome (es: `pilato-dj-postgres`)
 6. Seleziona il piano (il piano gratuito include 256 MB)
-7. Clicca **Create**
+7. Clicca **Create** o **Add**
+
+### Metodo Alternativo (se il Marketplace non è disponibile)
+
+1. Vai su **Settings** → **Storage**
+2. Clicca su **Create Database** o **Add Storage**
+3. Seleziona **Postgres**
+4. Scegli un nome (es: `pilato-dj-postgres`)
+5. Clicca **Create**
 
 ### Ottenere le Variabili d'Ambiente
 
-Dopo aver creato il KV:
+Dopo aver creato Postgres:
 
 1. Vai su **Settings** → **Environment Variables**
 2. Vercel dovrebbe aver già aggiunto automaticamente:
-   - `KV_REST_API_URL`
-   - `KV_REST_API_TOKEN`
-   - `KV_REST_API_READ_ONLY_TOKEN`
+   - `POSTGRES_URL`
+   - `POSTGRES_PRISMA_URL`
+   - `POSTGRES_URL_NON_POOLING`
 
-Se non vedi queste variabili, vai su **Storage** → **KV** → **Settings** e copia i valori.
+Se non vedi queste variabili, vai su **Storage** → **Postgres** → **Settings** e copia i valori.
+
+### Inizializzazione Automatica
+
+⚠️ **Nota**: La tabella `app_data` verrà creata automaticamente alla prima richiesta API. Non è necessario crearla manualmente.
 
 ## Step 3: Verificare le Variabili d'Ambiente
 
@@ -80,10 +91,10 @@ Assicurati che nel tuo progetto Vercel ci siano queste variabili d'ambiente:
 ### Per Blob Storage:
 - `BLOB_READ_WRITE_TOKEN` (o il nome che Vercel ha assegnato)
 
-### Per KV:
-- `KV_REST_API_URL`
-- `KV_REST_API_TOKEN`
-- `KV_REST_API_READ_ONLY_TOKEN`
+### Per Postgres:
+- `POSTGRES_URL`
+- `POSTGRES_PRISMA_URL` (opzionale)
+- `POSTGRES_URL_NON_POOLING` (opzionale)
 
 ## Step 4: Rideployare il Progetto
 
@@ -111,10 +122,11 @@ Dopo aver configurato Blob Storage e KV:
 - Verifica che la variabile d'ambiente sia impostata in Vercel
 - Assicurati di aver fatto redeploy dopo aver aggiunto le variabili
 
-### Errore: "KV_REST_API_URL is not defined"
+### Errore: "POSTGRES_URL is not defined"
 
-- Verifica che tutte le variabili KV siano impostate in Vercel
-- Controlla che il KV Storage sia stato creato correttamente
+- Verifica che tutte le variabili Postgres siano impostate in Vercel
+- Controlla che Postgres sia stato creato correttamente
+- Assicurati di aver fatto redeploy dopo aver aggiunto le variabili
 
 ### Le immagini non si caricano
 
@@ -123,14 +135,15 @@ Dopo aver configurato Blob Storage e KV:
 
 ### I dati non persistono
 
-- Verifica che KV sia stato creato e configurato
+- Verifica che Postgres sia stato creato e configurato
 - Controlla che le API routes funzionino correttamente
+- Verifica che la tabella `app_data` sia stata creata (viene creata automaticamente)
 
 ## Note Importanti
 
 ⚠️ **Piano Gratuito Vercel**:
 - Blob Storage: 1 GB di storage gratuito
-- KV: 256 MB di storage gratuito
+- Postgres: 256 MB di storage gratuito
 - Entrambi sono sufficienti per un sito di medie dimensioni
 
 ⚠️ **Backup**:
@@ -141,6 +154,6 @@ Dopo aver configurato Blob Storage e KV:
 
 Per problemi o domande:
 - [Documentazione Vercel Blob](https://vercel.com/docs/storage/vercel-blob)
-- [Documentazione Vercel KV](https://vercel.com/docs/storage/vercel-kv)
+- [Documentazione Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres)
 - [Supporto Vercel](https://vercel.com/support)
 

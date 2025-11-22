@@ -49,11 +49,11 @@ vercel
 ## 4. Configurazioni Importanti per Vercel
 
 ### Variabili d'Ambiente
-⚠️ **IMPORTANTE**: Dopo il deploy, devi configurare Vercel Blob Storage e Vercel KV.
+⚠️ **IMPORTANTE**: Dopo il deploy, devi configurare Vercel Blob Storage e Vercel Postgres.
 
 **Nota**: 
 - **Blob Storage** è disponibile tramite il **Marketplace** di Vercel (Storage → Marketplace)
-- **KV** deve essere configurato tramite **Settings** → **Storage** (non è nel Marketplace)
+- **Postgres** è disponibile tramite il **Marketplace** di Vercel (Storage → Marketplace)
 
 Vedi il file `VERCEL_SETUP.md` per le istruzioni complete.
 
