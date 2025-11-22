@@ -9,7 +9,9 @@ Questa guida ti aiuterà a configurare Vercel Blob Storage e Vercel KV per il si
 
 ## Nota sul Marketplace
 
-⚠️ **Importante**: KV e Blob Storage sono ora disponibili tramite il **Marketplace** di Vercel. Questo rende il processo di configurazione più semplice e intuitivo. Se non vedi l'opzione Marketplace, puoi ancora usarli tramite il metodo tradizionale in Settings → Storage.
+⚠️ **Importante**: 
+- **Blob Storage** è disponibile tramite il **Marketplace** di Vercel (metodo consigliato)
+- **KV** NON è disponibile nel Marketplace e deve essere configurato tramite il metodo tradizionale in **Settings** → **Storage**
 
 ## Step 1: Configurare Vercel Blob Storage
 
@@ -47,23 +49,17 @@ Se non vedi queste variabili, vai su **Storage** → **Blob** → **Settings** e
 
 Vercel KV è necessario per salvare i dati (date, gallery, blog posts).
 
-### Metodo tramite Marketplace (Consigliato)
+⚠️ **Nota**: KV non è disponibile tramite il Marketplace. Devi usare il metodo tradizionale.
+
+### Configurazione KV
 
 1. Vai sul tuo progetto su [Vercel Dashboard](https://vercel.com/dashboard)
-2. Vai su **Storage** → **Marketplace** (o cerca "Marketplace" nella barra laterale)
-3. Cerca **"KV"** o **"Vercel KV"**
-4. Clicca su **Add** o **Install**
+2. Vai su **Settings** → **Storage**
+3. Clicca su **Create Database** o **Add Storage**
+4. Seleziona **KV** (Redis)
 5. Scegli un nome (es: `pilato-dj-kv`)
 6. Seleziona il piano (il piano gratuito include 256 MB)
-7. Clicca **Create** o **Add**
-
-### Metodo Alternativo (se il Marketplace non è disponibile)
-
-1. Vai su **Settings** → **Storage**
-2. Clicca su **Create Database** o **Add Storage**
-3. Seleziona **KV** (Redis)
-4. Scegli un nome (es: `pilato-dj-kv`)
-5. Clicca **Create**
+7. Clicca **Create**
 
 ### Ottenere le Variabili d'Ambiente
 

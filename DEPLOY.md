@@ -51,7 +51,9 @@ vercel
 ### Variabili d'Ambiente
 ⚠️ **IMPORTANTE**: Dopo il deploy, devi configurare Vercel Blob Storage e Vercel KV.
 
-**Nota**: KV e Blob Storage sono disponibili tramite il **Marketplace** di Vercel (Storage → Marketplace), rendendo la configurazione più semplice!
+**Nota**: 
+- **Blob Storage** è disponibile tramite il **Marketplace** di Vercel (Storage → Marketplace)
+- **KV** deve essere configurato tramite **Settings** → **Storage** (non è nel Marketplace)
 
 Vedi il file `VERCEL_SETUP.md` per le istruzioni complete.
 
