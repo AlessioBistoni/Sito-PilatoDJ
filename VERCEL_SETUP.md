@@ -7,16 +7,31 @@ Questa guida ti aiuterà a configurare Vercel Blob Storage e Vercel KV per il si
 1. Account Vercel (gratuito)
 2. Progetto già deployato su Vercel (o pronto per il deploy)
 
+## Nota sul Marketplace
+
+⚠️ **Importante**: KV e Blob Storage sono ora disponibili tramite il **Marketplace** di Vercel. Questo rende il processo di configurazione più semplice e intuitivo. Se non vedi l'opzione Marketplace, puoi ancora usarli tramite il metodo tradizionale in Settings → Storage.
+
 ## Step 1: Configurare Vercel Blob Storage
 
 Vercel Blob Storage è necessario per salvare le immagini caricate dall'admin panel.
 
+### Metodo tramite Marketplace (Consigliato)
+
 1. Vai sul tuo progetto su [Vercel Dashboard](https://vercel.com/dashboard)
-2. Vai su **Settings** → **Storage**
-3. Clicca su **Create Database** o **Add Storage**
-4. Seleziona **Blob**
+2. Vai su **Storage** → **Marketplace** (o cerca "Marketplace" nella barra laterale)
+3. Cerca **"Blob"** o **"Vercel Blob"**
+4. Clicca su **Add** o **Install**
 5. Scegli un nome (es: `pilato-dj-blob`)
-6. Clicca **Create**
+6. Seleziona il piano (il piano gratuito include 1 GB)
+7. Clicca **Create** o **Add**
+
+### Metodo Alternativo (se il Marketplace non è disponibile)
+
+1. Vai su **Settings** → **Storage**
+2. Clicca su **Create Database** o **Add Storage**
+3. Seleziona **Blob**
+4. Scegli un nome (es: `pilato-dj-blob`)
+5. Clicca **Create**
 
 ### Ottenere le Variabili d'Ambiente
 
@@ -31,6 +46,18 @@ Se non vedi queste variabili, vai su **Storage** → **Blob** → **Settings** e
 ## Step 2: Configurare Vercel KV
 
 Vercel KV è necessario per salvare i dati (date, gallery, blog posts).
+
+### Metodo tramite Marketplace (Consigliato)
+
+1. Vai sul tuo progetto su [Vercel Dashboard](https://vercel.com/dashboard)
+2. Vai su **Storage** → **Marketplace** (o cerca "Marketplace" nella barra laterale)
+3. Cerca **"KV"** o **"Vercel KV"**
+4. Clicca su **Add** o **Install**
+5. Scegli un nome (es: `pilato-dj-kv`)
+6. Seleziona il piano (il piano gratuito include 256 MB)
+7. Clicca **Create** o **Add**
+
+### Metodo Alternativo (se il Marketplace non è disponibile)
 
 1. Vai su **Settings** → **Storage**
 2. Clicca su **Create Database** o **Add Storage**
