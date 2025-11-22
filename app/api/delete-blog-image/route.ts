@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { del } from '@vercel/blob'
+import { supabase } from '@/lib/supabase'
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -10,13 +10,26 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'URL immagine mancante' }, { status: 400 })
     }
 
-    // Elimina il blob da Vercel Blob Storage
-    await del(imageUrl)
+    // Estrai il nome del file dall'URL Supabase
+    const urlParts = imageUrl.split('/images/')
+    if (urlParts.length < 2) {
+      return NextResponse.json({ success: true })
+    }
+    
+    const fileName = urlParts[1]
+
+    // Elimina da Supabase Storage
+    const { error } = await supabase.storage
+      .from('images')
+      .remove([fileName])
+
+    if (error) {
+      console.error('Errore durante l\'eliminazione:', error)
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Errore durante l\'eliminazione:', error)
-    // Se l'immagine non esiste o è già stata eliminata, restituisci successo comunque
     return NextResponse.json({ success: true })
   }
 }

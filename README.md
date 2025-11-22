@@ -10,6 +10,7 @@ Sito web moderno e professionale per Francesco Pilato DJ (Piluz), costruito con 
 - **Framer Motion** - Libreria per animazioni fluide e moderne
 - **Lucide React** - Icone moderne e leggere
 - **TypeScript** - Tipizzazione statica per JavaScript
+- **Supabase** - Database PostgreSQL e Storage per immagini (gratuito e semplice!)
 
 ## ✨ Caratteristiche
 
@@ -27,12 +28,22 @@ Sito web moderno e professionale per Francesco Pilato DJ (Piluz), costruito con 
 npm install
 ```
 
-2. Avvia il server di sviluppo:
+2. Configura Supabase (vedi `SUPABASE_SETUP.md` per istruzioni dettagliate):
+   - Crea un account su [supabase.com](https://supabase.com)
+   - Crea un nuovo progetto
+   - Esegui gli script SQL in `supabase-setup.sql` e `supabase-storage-policy.sql`
+   - Crea un file `.env.local` con:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   ```
+
+3. Avvia il server di sviluppo:
 ```bash
 npm run dev
 ```
 
-3. Apri [http://localhost:3000](http://localhost:3000) nel browser
+4. Apri [http://localhost:3000](http://localhost:3000) nel browser
 
 ## 🏗️ Build per Produzione
 
@@ -85,10 +96,30 @@ Modifica i componenti in `components/` per personalizzare i testi e le informazi
 ### Immagini
 Aggiungi le tue immagini in `public/immagini/` e aggiorna i percorsi nei componenti.
 
+## 🗄️ Database e Storage
+
+Questo progetto usa **Supabase** per:
+- **Database PostgreSQL**: Per salvare date eventi, gallery e blog posts
+- **Storage**: Per salvare le immagini caricate dall'admin panel
+
+Supabase è gratuito e molto semplice da configurare. Vedi `SUPABASE_SETUP.md` per le istruzioni complete.
+
+## 🔐 Admin Panel
+
+Il sito include un pannello admin per gestire:
+- 📅 Date degli eventi
+- 🖼️ Immagini della gallery
+- 📝 Post del blog
+
+Accedi a `/admin` (password di default: `piluz2024`)
+
+Vedi `ADMIN_README.md` per maggiori informazioni.
+
 ## 📝 Note
 
 - Assicurati di avere Node.js 18+ installato
-- Le immagini devono essere ottimizzate per il web
+- Le immagini vengono ottimizzate automaticamente durante l'upload
+- Supabase offre un piano gratuito generoso (500 MB database, 1 GB storage)
 - Per il form di contatto, configura un servizio di backend o un servizio come Formspree
 
 ## 📄 Licenza

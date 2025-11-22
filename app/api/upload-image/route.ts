@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { put } from '@vercel/blob'
+import { supabase } from '@/lib/supabase'
 import sharp from 'sharp'
 
 export async function POST(request: NextRequest) {
@@ -36,15 +36,24 @@ export async function POST(request: NextRequest) {
       .jpeg({ quality: 85 })
       .toBuffer()
 
-    // Carica su Vercel Blob Storage
-    const blob = await put(fileName, resizedBuffer, {
-      access: 'public',
-      contentType: 'image/jpeg',
-    })
+    // Carica su Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('images')
+      .upload(fileName, resizedBuffer, {
+        contentType: 'image/jpeg',
+        upsert: false
+      })
+
+    if (error) throw error
+
+    // Ottieni l'URL pubblico
+    const { data: urlData } = supabase.storage
+      .from('images')
+      .getPublicUrl(fileName)
 
     return NextResponse.json({
       success: true,
-      path: blob.url,
+      path: urlData.publicUrl,
       alt: alt || originalName,
     })
   } catch (error) {

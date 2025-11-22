@@ -1,35 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sql } from '@vercel/postgres'
+import { supabase } from '@/lib/supabase'
 
 const STORAGE_KEY = 'pilato_dj_dates'
 
-// Inizializza la tabella se non esiste
-async function initTable() {
-  try {
-    await sql`
-      CREATE TABLE IF NOT EXISTS app_data (
-        key VARCHAR(255) PRIMARY KEY,
-        value JSONB NOT NULL,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `
-  } catch (error) {
-    // La tabella potrebbe già esistere, ignora l'errore
-    console.log('Tabella già esistente o errore nella creazione:', error)
-  }
-}
-
 export async function GET() {
   try {
-    await initTable()
-    const result = await sql`
-      SELECT value FROM app_data WHERE key = ${STORAGE_KEY}
-    `
+    const { data, error } = await supabase
+      .from('app_data')
+      .select('value')
+      .eq('key', STORAGE_KEY)
+      .single()
     
-    if (result.rows.length > 0) {
-      return NextResponse.json({ dates: result.rows[0].value || [] })
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      throw error
     }
-    return NextResponse.json({ dates: [] })
+    
+    return NextResponse.json({ dates: data?.value || [] })
   } catch (error) {
     console.error('Errore nel caricamento delle date:', error)
     return NextResponse.json({ dates: [] }, { status: 200 })
@@ -38,16 +24,17 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    await initTable()
     const { dates } = await request.json()
-    const datesJson = JSON.stringify(dates)
     
-    await sql`
-      INSERT INTO app_data (key, value, updated_at)
-      VALUES (${STORAGE_KEY}, ${datesJson}::jsonb, CURRENT_TIMESTAMP)
-      ON CONFLICT (key) 
-      DO UPDATE SET value = ${datesJson}::jsonb, updated_at = CURRENT_TIMESTAMP
-    `
+    const { error } = await supabase
+      .from('app_data')
+      .upsert({
+        key: STORAGE_KEY,
+        value: dates,
+        updated_at: new Date().toISOString()
+      })
+    
+    if (error) throw error
     
     return NextResponse.json({ success: true })
   } catch (error) {
