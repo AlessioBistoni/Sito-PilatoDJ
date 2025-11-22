@@ -24,14 +24,31 @@ export default function Gallery() {
 
   useEffect(() => {
     setMounted(true)
-    if (typeof window !== 'undefined') {
-      const savedImages = localStorage.getItem('gallery_images')
-      if (savedImages) {
-        const parsedImages = JSON.parse(savedImages)
+    
+    const loadImages = async () => {
+      try {
+        const response = await fetch('/api/data/gallery')
+        const data = await response.json()
+        const parsedImages = data.images || []
         if (parsedImages.length > 0) {
           setImages(parsedImages)
+        } else {
+          // Fallback alle immagini di default se non ci sono immagini caricate
+          setImages(defaultImages)
         }
+      } catch (error) {
+        console.error('Errore nel caricamento delle immagini:', error)
+        setImages(defaultImages)
       }
+    }
+    
+    loadImages()
+    
+    // Polling per aggiornare periodicamente
+    const interval = setInterval(loadImages, 5000)
+    
+    return () => {
+      clearInterval(interval)
     }
   }, [])
 

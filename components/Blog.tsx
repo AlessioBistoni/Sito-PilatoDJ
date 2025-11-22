@@ -22,16 +22,30 @@ export default function BlogPreview() {
 
   useEffect(() => {
     setMounted(true)
-    if (typeof window !== 'undefined') {
-      const savedPosts = localStorage.getItem('blog_posts')
-      if (savedPosts) {
-        const parsedPosts = JSON.parse(savedPosts)
+    
+    const loadPosts = async () => {
+      try {
+        const response = await fetch('/api/data/blog')
+        const data = await response.json()
+        const parsedPosts = data.posts || []
         // Mostra solo i post pubblicati
         const publishedPosts = parsedPosts
           .filter((post: BlogPost) => post.published)
           .slice(0, 3) // Mostra solo gli ultimi 3 come anteprima
         setPosts(publishedPosts)
+      } catch (error) {
+        console.error('Errore nel caricamento dei post:', error)
+        setPosts([])
       }
+    }
+    
+    loadPosts()
+    
+    // Polling per aggiornare periodicamente
+    const interval = setInterval(loadPosts, 5000)
+    
+    return () => {
+      clearInterval(interval)
     }
   }, [])
 

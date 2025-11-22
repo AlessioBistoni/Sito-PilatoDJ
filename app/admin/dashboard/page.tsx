@@ -19,11 +19,29 @@ export default function AdminDashboard() {
     }
 
     // Carica statistiche
-    const dates = JSON.parse(localStorage.getItem('dates') || '[]').length
-    const images = JSON.parse(localStorage.getItem('gallery_images') || '[]').length
-    const posts = JSON.parse(localStorage.getItem('blog_posts') || '[]').length
+    const loadStats = async () => {
+      try {
+        const [datesRes, imagesRes, postsRes] = await Promise.all([
+          fetch('/api/data/dates'),
+          fetch('/api/data/gallery'),
+          fetch('/api/data/blog'),
+        ])
+        
+        const datesData = await datesRes.json()
+        const imagesData = await imagesRes.json()
+        const postsData = await postsRes.json()
+        
+        setStats({
+          dates: datesData.dates?.length || 0,
+          images: imagesData.images?.length || 0,
+          posts: postsData.posts?.length || 0,
+        })
+      } catch (error) {
+        console.error('Errore nel caricamento delle statistiche:', error)
+      }
+    }
     
-    setStats({ dates, images, posts })
+    loadStats()
   }, [router])
 
   const handleLogout = () => {

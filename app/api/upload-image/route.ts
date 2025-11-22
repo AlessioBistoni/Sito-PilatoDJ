@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import { existsSync } from 'fs'
-import path from 'path'
+import { put } from '@vercel/blob'
 import sharp from 'sharp'
 
 export async function POST(request: NextRequest) {
@@ -19,17 +17,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Il file deve essere un\'immagine' }, { status: 400 })
     }
 
-    // Crea la cartella se non esiste
-    const uploadDir = path.join(process.cwd(), 'public', 'immagini', 'serate')
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true })
-    }
-
     // Genera un nome file unico
     const timestamp = Date.now()
     const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const fileName = `${timestamp}-${originalName}`
-    const filePath = path.join(uploadDir, fileName)
+    const fileName = `serate/${timestamp}-${originalName}`
 
     // Leggi il file come buffer
     const bytes = await file.arrayBuffer()
@@ -45,15 +36,15 @@ export async function POST(request: NextRequest) {
       .jpeg({ quality: 85 })
       .toBuffer()
 
-    // Salva il file ridimensionato
-    await writeFile(filePath, resizedBuffer)
-
-    // Restituisci il percorso relativo
-    const relativePath = `/immagini/serate/${fileName}`
+    // Carica su Vercel Blob Storage
+    const blob = await put(fileName, resizedBuffer, {
+      access: 'public',
+      contentType: 'image/jpeg',
+    })
 
     return NextResponse.json({
       success: true,
-      path: relativePath,
+      path: blob.url,
       alt: alt || originalName,
     })
   } catch (error) {

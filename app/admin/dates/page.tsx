@@ -31,14 +31,18 @@ export default function AdminDates() {
     loadDates()
   }, [router])
 
-  const loadDates = () => {
-    const savedDates = localStorage.getItem('dates')
-    if (savedDates) {
-      setDates(JSON.parse(savedDates))
+  const loadDates = async () => {
+    try {
+      const response = await fetch('/api/data/dates')
+      const data = await response.json()
+      setDates(data.dates || [])
+    } catch (error) {
+      console.error('Errore nel caricamento delle date:', error)
+      setDates([])
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const newDate: DateEvent = {
       id: Date.now().toString(),
@@ -47,17 +51,43 @@ export default function AdminDates() {
     const updatedDates = [...dates, newDate].sort((a, b) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
     )
-    setDates(updatedDates)
-    localStorage.setItem('dates', JSON.stringify(updatedDates))
-    setFormData({ date: '', location: '', venue: '' })
-    setShowForm(false)
+    
+    try {
+      const response = await fetch('/api/data/dates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dates: updatedDates }),
+      })
+      
+      if (response.ok) {
+        setDates(updatedDates)
+        setFormData({ date: '', location: '', venue: '' })
+        setShowForm(false)
+      }
+    } catch (error) {
+      console.error('Errore nel salvataggio:', error)
+      alert('Errore nel salvataggio della data')
+    }
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Sei sicuro di voler eliminare questa data?')) {
       const updatedDates = dates.filter(date => date.id !== id)
-      setDates(updatedDates)
-      localStorage.setItem('dates', JSON.stringify(updatedDates))
+      
+      try {
+        const response = await fetch('/api/data/dates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dates: updatedDates }),
+        })
+        
+        if (response.ok) {
+          setDates(updatedDates)
+        }
+      } catch (error) {
+        console.error('Errore nell\'eliminazione:', error)
+        alert('Errore nell\'eliminazione della data')
+      }
     }
   }
 

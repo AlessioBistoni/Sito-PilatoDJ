@@ -17,35 +17,29 @@ export default function Dates() {
 
   useEffect(() => {
     setMounted(true)
-    
-    if (typeof window === 'undefined') return
 
-    const loadDates = () => {
-      const savedDates = localStorage.getItem('dates')
-      if (savedDates) {
-        const parsedDates = JSON.parse(savedDates)
+    const loadDates = async () => {
+      try {
+        const response = await fetch('/api/data/dates')
+        const data = await response.json()
+        const parsedDates = data.dates || []
         // Filtra solo le date future
         const futureDates = parsedDates.filter((date: DateEvent) => 
           new Date(date.date) >= new Date()
         )
         setDates(futureDates)
+      } catch (error) {
+        console.error('Errore nel caricamento delle date:', error)
+        setDates([])
       }
     }
 
     loadDates()
     
-    // Ascolta i cambiamenti nel localStorage
-    const handleStorageChange = () => {
-      loadDates()
-    }
-    
-    window.addEventListener('storage', handleStorageChange)
-    
-    // Polling per aggiornare quando si modifica nella stessa finestra
-    const interval = setInterval(loadDates, 1000)
+    // Polling per aggiornare periodicamente
+    const interval = setInterval(loadDates, 5000)
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange)
       clearInterval(interval)
     }
   }, [])

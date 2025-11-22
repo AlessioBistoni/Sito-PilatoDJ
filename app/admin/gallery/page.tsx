@@ -33,18 +33,14 @@ export default function AdminGallery() {
     loadImages()
   }, [router])
 
-  const loadImages = () => {
-    const savedImages = localStorage.getItem('gallery_images')
-    if (savedImages) {
-      setImages(JSON.parse(savedImages))
-    } else {
-      // Carica immagini di default dalla cartella
-      const defaultImages = Array.from({ length: 8 }, (_, i) => ({
-        id: `default-${i + 1}`,
-        src: `/immagini/serate/${i + 1}.jpg`,
-        alt: `Serata ${i + 1}`,
-      }))
-      setImages(defaultImages)
+  const loadImages = async () => {
+    try {
+      const response = await fetch('/api/data/gallery')
+      const data = await response.json()
+      setImages(data.images || [])
+    } catch (error) {
+      console.error('Errore nel caricamento delle immagini:', error)
+      setImages([])
     }
   }
 
@@ -96,14 +92,24 @@ export default function AdminGallery() {
       }
 
       const updatedImages = [...images, newImage]
-      setImages(updatedImages)
-      localStorage.setItem('gallery_images', JSON.stringify(updatedImages))
       
-      // Reset form
-      setFormData({ alt: '' })
-      setSelectedFile(null)
-      setPreview(null)
-      setShowForm(false)
+      // Salva su API
+      const saveResponse = await fetch('/api/data/gallery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ images: updatedImages }),
+      })
+      
+      if (saveResponse.ok) {
+        setImages(updatedImages)
+        // Reset form
+        setFormData({ alt: '' })
+        setSelectedFile(null)
+        setPreview(null)
+        setShowForm(false)
+      } else {
+        throw new Error('Errore nel salvataggio della lista immagini')
+      }
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : 'Errore durante l\'upload')
     } finally {
@@ -119,8 +125,8 @@ export default function AdminGallery() {
     const imageToDelete = images.find(img => img.id === id)
     if (!imageToDelete) return
 
-    // Se l'immagine non è una di default, elimina anche il file fisico
-    if (!imageToDelete.id.startsWith('default-')) {
+    // Elimina il file da Vercel Blob Storage (se non è un'immagine locale)
+    if (!imageToDelete.id.startsWith('default-') && imageToDelete.src.startsWith('http')) {
       try {
         await fetch(`/api/delete-image?path=${encodeURIComponent(imageToDelete.src)}`, {
           method: 'DELETE',
@@ -131,8 +137,22 @@ export default function AdminGallery() {
     }
 
     const updatedImages = images.filter(img => img.id !== id)
-    setImages(updatedImages)
-    localStorage.setItem('gallery_images', JSON.stringify(updatedImages))
+    
+    // Salva su API
+    try {
+      const response = await fetch('/api/data/gallery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ images: updatedImages }),
+      })
+      
+      if (response.ok) {
+        setImages(updatedImages)
+      }
+    } catch (error) {
+      console.error('Errore nell\'eliminazione:', error)
+      alert('Errore nell\'eliminazione dell\'immagine')
+    }
   }
 
   return (

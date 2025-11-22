@@ -26,17 +26,31 @@ export default function BlogPage() {
 
   useEffect(() => {
     setMounted(true)
-    if (typeof window !== 'undefined') {
-      const savedPosts = localStorage.getItem('blog_posts')
-      if (savedPosts) {
-        const parsedPosts = JSON.parse(savedPosts)
+    
+    const loadPosts = async () => {
+      try {
+        const response = await fetch('/api/data/blog')
+        const data = await response.json()
+        const parsedPosts = data.posts || []
         const publishedPosts = parsedPosts
           .filter((post: BlogPost) => post.published)
           .sort((a: BlogPost, b: BlogPost) => 
             new Date(b.date).getTime() - new Date(a.date).getTime()
           )
         setPosts(publishedPosts)
+      } catch (error) {
+        console.error('Errore nel caricamento dei post:', error)
+        setPosts([])
       }
+    }
+    
+    loadPosts()
+    
+    // Polling per aggiornare periodicamente
+    const interval = setInterval(loadPosts, 5000)
+    
+    return () => {
+      clearInterval(interval)
     }
   }, [])
 

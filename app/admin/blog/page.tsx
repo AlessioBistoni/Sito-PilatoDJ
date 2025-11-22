@@ -42,25 +42,29 @@ export default function AdminBlog() {
     loadPosts()
   }, [router])
 
-  const loadPosts = () => {
-    const savedPosts = localStorage.getItem('blog_posts')
-    if (savedPosts) {
-      setPosts(JSON.parse(savedPosts))
+  const loadPosts = async () => {
+    try {
+      const response = await fetch('/api/data/blog')
+      const data = await response.json()
+      setPosts(data.posts || [])
+    } catch (error) {
+      console.error('Errore nel caricamento dei post:', error)
+      setPosts([])
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    let updatedPosts: BlogPost[]
     
     if (editingPost) {
       // Modifica post esistente
-      const updatedPosts = posts.map(post =>
+      updatedPosts = posts.map(post =>
         post.id === editingPost.id
           ? { ...formData, id: editingPost.id, date: editingPost.date }
           : post
       )
-      setPosts(updatedPosts)
-      localStorage.setItem('blog_posts', JSON.stringify(updatedPosts))
     } else {
       // Nuovo post
       const newPost: BlogPost = {
@@ -68,16 +72,30 @@ export default function AdminBlog() {
         ...formData,
         date: new Date().toISOString(),
       }
-      const updatedPosts = [newPost, ...posts]
-      setPosts(updatedPosts)
-      localStorage.setItem('blog_posts', JSON.stringify(updatedPosts))
+      updatedPosts = [newPost, ...posts]
     }
     
-    setFormData({ title: '', content: '', published: true, image: '', imageCaption: '' })
-    setSelectedFile(null)
-    setPreview(null)
-    setShowForm(false)
-    setEditingPost(null)
+    try {
+      const response = await fetch('/api/data/blog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ posts: updatedPosts }),
+      })
+      
+      if (response.ok) {
+        setPosts(updatedPosts)
+        setFormData({ title: '', content: '', published: true, image: '', imageCaption: '' })
+        setSelectedFile(null)
+        setPreview(null)
+        setShowForm(false)
+        setEditingPost(null)
+      } else {
+        alert('Errore nel salvataggio del post')
+      }
+    } catch (error) {
+      console.error('Errore nel salvataggio:', error)
+      alert('Errore nel salvataggio del post')
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,8 +176,8 @@ export default function AdminBlog() {
     const postToDelete = posts.find(post => post.id === id)
     if (!postToDelete) return
 
-    // Se il post ha un'immagine, elimina anche il file fisico
-    if (postToDelete.image) {
+    // Se il post ha un'immagine, elimina anche il file da Vercel Blob
+    if (postToDelete.image && postToDelete.image.startsWith('http')) {
       try {
         await fetch(`/api/delete-blog-image?path=${encodeURIComponent(postToDelete.image)}`, {
           method: 'DELETE',
@@ -170,16 +188,42 @@ export default function AdminBlog() {
     }
 
     const updatedPosts = posts.filter(post => post.id !== id)
-    setPosts(updatedPosts)
-    localStorage.setItem('blog_posts', JSON.stringify(updatedPosts))
+    
+    try {
+      const response = await fetch('/api/data/blog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ posts: updatedPosts }),
+      })
+      
+      if (response.ok) {
+        setPosts(updatedPosts)
+      }
+    } catch (error) {
+      console.error('Errore nell\'eliminazione:', error)
+      alert('Errore nell\'eliminazione del post')
+    }
   }
 
-  const togglePublish = (id: string) => {
+  const togglePublish = async (id: string) => {
     const updatedPosts = posts.map(post =>
       post.id === id ? { ...post, published: !post.published } : post
     )
-    setPosts(updatedPosts)
-    localStorage.setItem('blog_posts', JSON.stringify(updatedPosts))
+    
+    try {
+      const response = await fetch('/api/data/blog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ posts: updatedPosts }),
+      })
+      
+      if (response.ok) {
+        setPosts(updatedPosts)
+      }
+    } catch (error) {
+      console.error('Errore nell\'aggiornamento:', error)
+      alert('Errore nell\'aggiornamento del post')
+    }
   }
 
   return (
