@@ -40,12 +40,13 @@ export async function POST(request: NextRequest) {
   try {
     await initTable()
     const { images } = await request.json()
+    const imagesJson = JSON.stringify(images)
     
     await sql`
       INSERT INTO app_data (key, value, updated_at)
-      VALUES (${STORAGE_KEY}, ${JSON.stringify(images)}::jsonb, CURRENT_TIMESTAMP)
+      VALUES (${STORAGE_KEY}, ${imagesJson}::jsonb, CURRENT_TIMESTAMP)
       ON CONFLICT (key) 
-      DO UPDATE SET value = ${JSON.stringify(images)}::jsonb, updated_at = CURRENT_TIMESTAMP
+      DO UPDATE SET value = ${imagesJson}::jsonb, updated_at = CURRENT_TIMESTAMP
     `
     
     return NextResponse.json({ success: true })
