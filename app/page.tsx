@@ -10,7 +10,7 @@ import Footer from '@/components/Footer'
 
 export default function Home() {
   return (
-    <main className="relative">
+    <main className="relative min-w-0 overflow-x-hidden pb-safe">
       <Navigation />
       <Hero />
       <About />

@@ -44,28 +44,28 @@ const services = [
 
 export default function Services() {
   return (
-    <section id="services" className="py-20 relative overflow-hidden">
+    <section id="services" className="section-y relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-black via-pink-900/10 to-black" />
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container relative z-10 mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-16"
+          className="mb-12 text-center sm:mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
             <span className="text-gradient">Servizi</span>
           </h2>
           <div className="w-24 h-1 bg-gradient-to-r from-pink-500 to-purple-500 mx-auto mb-6" />
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="mx-auto max-w-3xl px-1 text-base leading-relaxed text-gray-300 sm:text-lg md:text-xl">
             Offro servizi completi per rendere ogni evento un successo. Dalle serate in discoteca agli eventi privati.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {services.map((service, index) => {
             const Icon = service.icon
             return (
@@ -77,7 +77,7 @@ export default function Services() {
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 className="group relative"
               >
-                <div className="glass-effect rounded-xl p-8 h-full hover:border-pink-500/50 transition-all relative overflow-hidden">
+                <div className="glass-effect relative h-full overflow-hidden rounded-xl p-5 transition-all hover:border-pink-500/50 sm:p-6 md:p-8">
                   {/* Gradient Background on Hover */}
                   <motion.div
                     className={`absolute inset-0 bg-gradient-to-br ${service.color} opacity-0 group-hover:opacity-10 transition-opacity`}

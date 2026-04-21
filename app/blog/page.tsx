@@ -20,37 +20,32 @@ interface BlogPost {
 
 export default function BlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([])
-  const [mounted, setMounted] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    setMounted(true)
-    
-    const loadPosts = async () => {
+    let cancelled = false
+    ;(async () => {
       try {
         const response = await fetch('/api/data/blog')
         const data = await response.json()
         const parsedPosts = data.posts || []
         const publishedPosts = parsedPosts
           .filter((post: BlogPost) => post.published)
-          .sort((a: BlogPost, b: BlogPost) => 
-            new Date(b.date).getTime() - new Date(a.date).getTime()
+          .sort(
+            (a: BlogPost, b: BlogPost) =>
+              new Date(b.date).getTime() - new Date(a.date).getTime()
           )
-        setPosts(publishedPosts)
-      } catch (error) {
-        console.error('Errore nel caricamento dei post:', error)
-        setPosts([])
+        if (!cancelled) setPosts(publishedPosts)
+      } catch {
+        if (!cancelled) setPosts([])
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-    }
-    
-    loadPosts()
-    
-    // Polling per aggiornare periodicamente
-    const interval = setInterval(loadPosts, 5000)
-    
+    })()
     return () => {
-      clearInterval(interval)
+      cancelled = true
     }
   }, [])
 
@@ -72,10 +67,10 @@ export default function BlogPage() {
   }
 
   return (
-    <main className="relative min-h-screen bg-black">
+    <main className="relative min-h-dvh min-w-0 bg-black pb-safe">
       <Navigation />
-      <section className="pt-20 md:pt-24 pb-20 relative">
-        <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 max-w-7xl">
+      <section className="relative pb-12 pt-[calc(3.5rem+env(safe-area-inset-top,0px)+1rem)] sm:pb-16 md:pb-20 md:pt-24">
+        <div className="container mx-auto max-w-7xl">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -95,7 +90,7 @@ export default function BlogPage() {
             </h1>
           </motion.div>
 
-          {!mounted ? (
+          {loading ? (
             <div className="text-center py-20">
               <p className="text-gray-400">Caricamento...</p>
             </div>

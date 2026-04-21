@@ -15,6 +15,7 @@ interface DateEvent {
 export default function AdminDates() {
   const router = useRouter()
   const [dates, setDates] = useState<DateEvent[]>([])
+  const [supabaseConfigured, setSupabaseConfigured] = useState<boolean | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
     date: '',
@@ -36,6 +37,9 @@ export default function AdminDates() {
       const response = await fetch('/api/data/dates')
       const data = await response.json()
       setDates(data.dates || [])
+      if (typeof data.configured === 'boolean') {
+        setSupabaseConfigured(data.configured)
+      }
     } catch (error) {
       console.error('Errore nel caricamento delle date:', error)
       setDates([])
@@ -58,11 +62,18 @@ export default function AdminDates() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dates: updatedDates }),
       })
-      
+      const payload = await response.json().catch(() => ({}))
+
       if (response.ok) {
         setDates(updatedDates)
         setFormData({ date: '', location: '', venue: '' })
         setShowForm(false)
+      } else {
+        const msg =
+          typeof payload.error === 'string'
+            ? payload.error
+            : `Salvataggio non riuscito (${response.status})`
+        alert(msg)
       }
     } catch (error) {
       console.error('Errore nel salvataggio:', error)
@@ -80,9 +91,16 @@ export default function AdminDates() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ dates: updatedDates }),
         })
-        
+        const payload = await response.json().catch(() => ({}))
+
         if (response.ok) {
           setDates(updatedDates)
+        } else {
+          const msg =
+            typeof payload.error === 'string'
+              ? payload.error
+              : `Eliminazione non riuscita (${response.status})`
+          alert(msg)
         }
       } catch (error) {
         console.error('Errore nell\'eliminazione:', error)
@@ -109,6 +127,7 @@ export default function AdminDates() {
             </div>
           </div>
           <button
+            type="button"
             onClick={() => setShowForm(!showForm)}
             className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg text-white hover:from-pink-600 hover:to-purple-600 transition-colors"
           >
@@ -116,6 +135,27 @@ export default function AdminDates() {
             <span>Nuova Data</span>
           </button>
         </div>
+        {supabaseConfigured === false && (
+          <div
+            className="mb-6 rounded-lg border border-amber-600/50 bg-amber-950/40 p-4 text-amber-100"
+            role="status"
+          >
+            <p className="font-semibold">Storage non disponibile</p>
+            <p className="mt-1 text-sm text-amber-200/90">
+              Stai usando il sito in <strong>produzione</strong> senza variabili Supabase, oppure una
+              build in cui lo sviluppo locale non è attivo. Aggiungi in{' '}
+              <code className="rounded bg-black/30 px-1">.env.local</code> (locale) o su Vercel le
+              variabili <code className="rounded bg-black/30 px-1">NEXT_PUBLIC_SUPABASE_URL</code> e{' '}
+              <code className="rounded bg-black/30 px-1">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, poi
+              riavvia il server.
+            </p>
+            <p className="mt-2 text-xs text-amber-200/70">
+              In <strong>sviluppo</strong> (<code className="rounded bg-black/30 px-1">npm run dev</code>)
+              senza <code className="rounded bg-black/30 px-1">.env.local</code> i dati si salvano comunque
+              nel file <code className="rounded bg-black/30 px-1">.pilato-dev/app-data.json</code>.
+            </p>
+          </div>
+        )}
 
         {/* Form */}
         {showForm && (

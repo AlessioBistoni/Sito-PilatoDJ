@@ -13,3 +13,4 @@ CREATE POLICY "Allow public read access" ON storage.objects
 CREATE POLICY "Allow public delete access" ON storage.objects
   FOR DELETE USING (bucket_id = 'images');
 
+

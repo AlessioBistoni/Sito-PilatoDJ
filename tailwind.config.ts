@@ -7,7 +7,21 @@ const config: Config = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
+    container: {
+      center: true,
+      padding: {
+        DEFAULT: '1rem',
+        sm: '1.25rem',
+        lg: '2rem',
+      },
+      screens: {
+        '2xl': '1280px',
+      },
+    },
     extend: {
+      screens: {
+        xs: '380px',
+      },
       colors: {
         primary: {
           50: '#fdf2f8',

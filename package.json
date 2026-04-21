@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "kill-port 3000 && next dev -p 3000",
+    "dev:reset": "kill-port 3000 && rm -rf .next && next dev -p 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -12,7 +13,7 @@
     "@supabase/supabase-js": "^2.84.0",
     "framer-motion": "^10.16.16",
     "lucide-react": "^0.294.0",
-    "next": "^14.0.4",
+    "next": "15.5.14",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sharp": "^0.33.5"
@@ -22,6 +23,9 @@
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
     "autoprefixer": "^10.4.16",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "15.5.14",
+    "kill-port": "^2.0.1",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.3.3"

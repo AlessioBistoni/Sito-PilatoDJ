@@ -24,7 +24,7 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+    <div className="flex min-h-dvh items-center justify-center bg-gray-900 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-safe">
       <div className="bg-gray-800 rounded-lg p-8 w-full max-w-md border border-gray-700">
         <div className="flex items-center justify-center mb-6">
           <Lock className="text-pink-500" size={48} />
@@ -45,7 +45,7 @@ export default function AdminLogin() {
                 setPassword(e.target.value)
                 setError('')
               }}
-              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-pink-500 transition-colors"
+              className="min-h-[48px] w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-3 text-base text-white focus:border-pink-500 focus:outline-none"
               placeholder="Inserisci la password"
               required
             />

@@ -23,3 +23,4 @@ CREATE POLICY "Allow public write access" ON app_data
 CREATE POLICY "Allow public update access" ON app_data
   FOR UPDATE USING (true);
 
+

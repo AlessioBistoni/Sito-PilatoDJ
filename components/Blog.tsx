@@ -18,69 +18,63 @@ interface BlogPost {
 
 export default function BlogPreview() {
   const [posts, setPosts] = useState<BlogPost[]>([])
-  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
-    
-    const loadPosts = async () => {
+    let cancelled = false
+    ;(async () => {
       try {
         const response = await fetch('/api/data/blog')
         const data = await response.json()
         const parsedPosts = data.posts || []
-        // Mostra solo i post pubblicati
         const publishedPosts = parsedPosts
           .filter((post: BlogPost) => post.published)
-          .slice(0, 3) // Mostra solo gli ultimi 3 come anteprima
-        setPosts(publishedPosts)
-      } catch (error) {
-        console.error('Errore nel caricamento dei post:', error)
-        setPosts([])
+          .slice(0, 3)
+        if (!cancelled) setPosts(publishedPosts)
+      } catch {
+        if (!cancelled) setPosts([])
       }
-    }
-    
-    loadPosts()
-    
-    // Polling per aggiornare periodicamente
-    const interval = setInterval(loadPosts, 5000)
-    
+    })()
     return () => {
-      clearInterval(interval)
+      cancelled = true
     }
   }, [])
 
-  if (!mounted || posts.length === 0) return null
-
   return (
-    <section id="blog" className="py-20 relative overflow-hidden">
+    <section id="blog" className="section-y relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-black via-pink-900/10 to-black" />
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container relative z-10 mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-16"
+          className="mb-12 text-center sm:mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
             <span className="text-gradient">Blog</span>
           </h2>
           <div className="w-24 h-1 bg-gradient-to-r from-pink-500 to-purple-500 mx-auto mb-6" />
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
+          <p className="mx-auto mb-6 max-w-3xl px-1 text-base leading-relaxed text-gray-300 sm:mb-8 sm:text-lg md:text-xl">
             Aggiornamenti, pensieri e novità dal mondo della musica.
           </p>
           <Link
             href="/blog"
-            className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full text-white font-semibold hover:from-pink-600 hover:to-purple-600 transition-colors"
+            className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:from-pink-600 hover:to-purple-600 sm:text-base"
           >
             <span>Vedi tutti i post</span>
             <ArrowRight size={20} />
           </Link>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-5 sm:gap-6 md:grid-cols-3">
+          {posts.length === 0 ? (
+            <div className="col-span-full text-center py-8">
+              <FileText className="text-gray-600 mx-auto mb-4" size={48} />
+              <p className="text-gray-400 text-lg">Nessun articolo pubblicato al momento.</p>
+            </div>
+          ) : null}
           {posts.map((post, index) => (
             <Link
               key={post.id}
@@ -95,16 +89,17 @@ export default function BlogPreview() {
                 className="glass-effect rounded-xl overflow-hidden hover:border-pink-500/50 transition-all group h-full flex flex-col cursor-pointer"
               >
                 {post.image && (
-                  <div className="relative w-full h-48">
+                  <div className="relative aspect-[16/10] w-full sm:aspect-[16/9] md:h-48 md:aspect-auto">
                     <Image
                       src={post.image}
                       alt={post.title}
                       fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="object-cover transition-transform duration-300 md:group-hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, 33vw"
                     />
                   </div>
                 )}
-                <div className="p-6 flex flex-col flex-1">
+                <div className="flex flex-1 flex-col p-4 sm:p-6">
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="p-2 bg-gradient-to-br from-pink-500 to-purple-500 rounded-lg">
                       <FileText className="text-white" size={20} />
@@ -120,7 +115,7 @@ export default function BlogPreview() {
                       </span>
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-3 group-hover:text-pink-500 transition-colors">
+                  <h3 className="mb-3 break-words text-lg font-bold text-white transition-colors group-hover:text-pink-500 sm:text-xl">
                     {post.title}
                   </h3>
                   <p className="text-gray-300 flex-1 line-clamp-4">

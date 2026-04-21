@@ -1,45 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import {
+  readAppDataValue,
+  writeAppDataValue,
+  isAppDataConfigured,
+} from '@/lib/app-data'
 
 const STORAGE_KEY = 'pilato_dj_dates'
 
 export async function GET() {
+  if (!isAppDataConfigured()) {
+    return NextResponse.json({ dates: [], configured: false })
+  }
   try {
-    const { data, error } = await supabase
-      .from('app_data')
-      .select('value')
-      .eq('key', STORAGE_KEY)
-      .single()
-    
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-      throw error
-    }
-    
-    return NextResponse.json({ dates: data?.value || [] })
-  } catch (error) {
-    console.error('Errore nel caricamento delle date:', error)
-    return NextResponse.json({ dates: [] }, { status: 200 })
+    const value = await readAppDataValue(STORAGE_KEY)
+    return NextResponse.json({
+      dates: Array.isArray(value) ? value : [],
+      configured: true,
+    })
+  } catch {
+    return NextResponse.json({ dates: [], configured: true })
   }
 }
 
 export async function POST(request: NextRequest) {
+  if (!isAppDataConfigured()) {
+    return NextResponse.json(
+      {
+        error:
+          'Storage non configurato. In produzione imposta NEXT_PUBLIC_SUPABASE_* su Vercel o nel file .env.local.',
+      },
+      { status: 503 }
+    )
+  }
   try {
     const { dates } = await request.json()
-    
-    const { error } = await supabase
-      .from('app_data')
-      .upsert({
-        key: STORAGE_KEY,
-        value: dates,
-        updated_at: new Date().toISOString()
-      })
-    
-    if (error) throw error
-    
+    await writeAppDataValue(STORAGE_KEY, dates)
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Errore nel salvataggio delle date:', error)
-    return NextResponse.json({ error: 'Errore nel salvataggio' }, { status: 500 })
+  } catch (err) {
+    console.error('[dates POST]', err)
+    const message =
+      err instanceof Error ? err.message : 'Errore nel salvataggio'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
-

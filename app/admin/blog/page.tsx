@@ -179,7 +179,7 @@ export default function AdminBlog() {
     // Se il post ha un'immagine, elimina anche il file da Vercel Blob
     if (postToDelete.image && postToDelete.image.startsWith('http')) {
       try {
-        await fetch(`/api/delete-blog-image?path=${encodeURIComponent(postToDelete.image)}`, {
+        await fetch(`/api/delete-image?path=${encodeURIComponent(postToDelete.image)}`, {
           method: 'DELETE',
         })
       } catch (error) {

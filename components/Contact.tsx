@@ -36,43 +36,43 @@ export default function Contact() {
   }
 
   return (
-    <section id="contact" className="py-20 relative overflow-hidden">
+    <section id="contact" className="section-y relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-black via-pink-900/10 to-black" />
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container relative z-10 mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-16"
+          className="mb-12 text-center sm:mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
             <span className="text-gradient">Contatti</span>
           </h2>
           <div className="w-24 h-1 bg-gradient-to-r from-pink-500 to-purple-500 mx-auto mb-6" />
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="mx-auto max-w-3xl px-1 text-base leading-relaxed text-gray-300 sm:text-lg md:text-xl">
             Hai un evento in programma? Contattami per rendere la tua serata indimenticabile.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
           {/* Contact Info */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="space-y-8"
+            className="space-y-6 sm:space-y-8"
           >
             <div>
-              <h3 className="text-2xl font-bold mb-6 text-gradient">Informazioni</h3>
-              <div className="space-y-6">
+              <h3 className="mb-4 text-xl font-bold text-gradient sm:mb-6 sm:text-2xl">Informazioni</h3>
+              <div className="space-y-4 sm:space-y-6">
                 <motion.a
                   href="mailto:info@francescopilatodj.com"
-                  className="flex items-center space-x-4 glass-effect p-4 rounded-xl hover:border-pink-500/50 transition-all group"
-                  whileHover={{ x: 10 }}
+                  className="group flex min-h-[52px] items-center gap-4 rounded-xl glass-effect p-4 transition-all hover:border-pink-500/50 active:bg-white/5"
+                  whileHover={{ x: 6 }}
                 >
                   <div className="p-3 bg-gradient-to-br from-pink-500 to-purple-500 rounded-lg">
                     <Mail className="text-white" size={24} />
@@ -87,8 +87,8 @@ export default function Contact() {
 
                 <motion.a
                   href="tel:+39"
-                  className="flex items-center space-x-4 glass-effect p-4 rounded-xl hover:border-pink-500/50 transition-all group"
-                  whileHover={{ x: 10 }}
+                  className="group flex min-h-[52px] items-center gap-4 rounded-xl glass-effect p-4 transition-all hover:border-pink-500/50 active:bg-white/5"
+                  whileHover={{ x: 6 }}
                 >
                   <div className="p-3 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg">
                     <Phone className="text-white" size={24} />
@@ -101,7 +101,7 @@ export default function Contact() {
                   </div>
                 </motion.a>
 
-                <div className="flex items-center space-x-4 glass-effect p-4 rounded-xl">
+                <div className="flex min-h-[52px] items-center gap-4 rounded-xl glass-effect p-4">
                   <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg">
                     <MapPin className="text-white" size={24} />
                   </div>
@@ -115,8 +115,8 @@ export default function Contact() {
 
             {/* Social Links */}
             <div>
-              <h3 className="text-2xl font-bold mb-6 text-gradient">Seguimi</h3>
-              <div className="flex space-x-4">
+              <h3 className="mb-4 text-xl font-bold text-gradient sm:mb-6 sm:text-2xl">Seguimi</h3>
+              <div className="flex flex-wrap gap-3 sm:gap-4">
                 {socialLinks.map((social) => {
                   const Icon = social.icon
                   return (
@@ -125,9 +125,9 @@ export default function Contact() {
                       href={social.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-4 glass-effect rounded-xl hover:border-pink-500/50 transition-all group"
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      whileTap={{ scale: 0.9 }}
+                      className="tap-target rounded-xl glass-effect p-3 transition-all hover:border-pink-500/50 group sm:p-4"
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.95 }}
                     >
                       <Icon className="text-white group-hover:text-pink-500 transition-colors" size={24} />
                     </motion.a>
@@ -144,7 +144,7 @@ export default function Contact() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
             onSubmit={handleSubmit}
-            className="glass-effect p-8 rounded-2xl space-y-6"
+            className="space-y-5 rounded-2xl glass-effect p-4 sm:space-y-6 sm:p-6 md:p-8"
           >
             <div>
               <label htmlFor="name" className="block text-sm font-medium mb-2">
@@ -157,8 +157,9 @@ export default function Contact() {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:border-pink-500 transition-colors"
+                className="min-h-[48px] w-full rounded-lg border border-white/20 bg-black/50 px-4 py-3 text-base text-white placeholder:text-gray-500 focus:border-pink-500 focus:outline-none"
                 placeholder="Il tuo nome"
+                autoComplete="name"
               />
             </div>
 
@@ -173,8 +174,10 @@ export default function Contact() {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:border-pink-500 transition-colors"
+                className="min-h-[48px] w-full rounded-lg border border-white/20 bg-black/50 px-4 py-3 text-base text-white placeholder:text-gray-500 focus:border-pink-500 focus:outline-none"
                 placeholder="la.tua.email@example.com"
+                autoComplete="email"
+                inputMode="email"
               />
             </div>
 
@@ -188,8 +191,10 @@ export default function Contact() {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full px-4 py-3 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:border-pink-500 transition-colors"
+                className="min-h-[48px] w-full rounded-lg border border-white/20 bg-black/50 px-4 py-3 text-base text-white placeholder:text-gray-500 focus:border-pink-500 focus:outline-none"
                 placeholder="+39 XXX XXX XXXX"
+                autoComplete="tel"
+                inputMode="tel"
               />
             </div>
 
@@ -204,7 +209,7 @@ export default function Contact() {
                 onChange={handleChange}
                 required
                 rows={5}
-                className="w-full px-4 py-3 bg-black/50 border border-white/20 rounded-lg focus:outline-none focus:border-pink-500 transition-colors resize-none"
+                className="min-h-[140px] w-full resize-none rounded-lg border border-white/20 bg-black/50 px-4 py-3 text-base text-white placeholder:text-gray-500 focus:border-pink-500 focus:outline-none"
                 placeholder="Raccontami del tuo evento..."
               />
             </div>
@@ -212,7 +217,7 @@ export default function Contact() {
             <motion.button
               type="submit"
               disabled={isSubmitting}
-              className="w-full px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full font-semibold text-white flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 px-8 py-3 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >

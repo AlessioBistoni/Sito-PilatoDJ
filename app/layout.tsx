@@ -1,10 +1,17 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Francesco Pilato DJ | Piluz',
   description: 'DJ professionista per le tue serate. Musica che fa ballare, esperienza che conta.',
   keywords: 'DJ, musica, serate, eventi, Francesco Pilato, Piluz',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#000000',
 }
 
 export default function RootLayout({
