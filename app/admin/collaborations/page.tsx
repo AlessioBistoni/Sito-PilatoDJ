@@ -1,14 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Trash2, Users } from 'lucide-react'
 import type { CollaborationPartner } from '@/lib/collaborations'
 import BlogImage from '@/components/BlogImage'
 
 export default function AdminCollaborations() {
-  const router = useRouter()
   const [partners, setPartners] = useState<CollaborationPartner[]>([])
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({ name: '', websiteUrl: '' })
@@ -19,13 +17,8 @@ export default function AdminCollaborations() {
   const [supabaseConfigured, setSupabaseConfigured] = useState<boolean | null>(null)
 
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem('admin_authenticated')
-    if (!isAuthenticated) {
-      router.push('/admin')
-      return
-    }
-    loadPartners()
-  }, [router])
+    void loadPartners()
+  }, [])
 
   const loadPartners = async () => {
     try {

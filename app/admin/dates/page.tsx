@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, Calendar, Clock, MapPin, Plus, Trash2, X } from 'lucide-react'
@@ -9,7 +8,6 @@ import { type AppDateEvent, hasStartTime } from '@/lib/dates'
 import { DatesCalendar } from '@/components/DatesCalendar'
 
 export default function AdminDates() {
-  const router = useRouter()
   const [dates, setDates] = useState<AppDateEvent[]>([])
   const [supabaseConfigured, setSupabaseConfigured] = useState<boolean | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -21,13 +19,8 @@ export default function AdminDates() {
   })
 
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem('admin_authenticated')
-    if (!isAuthenticated) {
-      router.push('/admin')
-      return
-    }
-    loadDates()
-  }, [router])
+    void loadDates()
+  }, [])
 
   const loadDates = async () => {
     try {

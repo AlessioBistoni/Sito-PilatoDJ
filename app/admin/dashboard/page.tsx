@@ -16,15 +16,6 @@ export default function AdminDashboard() {
   })
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    
-    const isAuthenticated = localStorage.getItem('admin_authenticated')
-    if (!isAuthenticated) {
-      router.push('/admin')
-      return
-    }
-
-    // Carica statistiche
     const loadStats = async () => {
       try {
         const [datesRes, imagesRes, postsRes, collabRes, msgRes] = await Promise.all([
@@ -53,12 +44,17 @@ export default function AdminDashboard() {
       }
     }
     
-    loadStats()
-  }, [router])
+    void loadStats()
+  }, [])
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_authenticated')
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' })
+    } catch {
+      // continua comunque con redirect
+    }
     router.push('/admin')
+    router.refresh()
   }
 
   const menuItems = [

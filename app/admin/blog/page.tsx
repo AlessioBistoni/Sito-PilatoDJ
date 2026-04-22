@@ -31,13 +31,8 @@ function AdminBlogInner() {
   const lastEditHydratedIdRef = useRef<string | null>(null)
 
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem('admin_authenticated')
-    if (!isAuthenticated) {
-      router.push('/admin')
-      return
-    }
-    loadPosts()
-  }, [router])
+    void loadPosts()
+  }, [])
 
   const loadPosts = async () => {
     try {

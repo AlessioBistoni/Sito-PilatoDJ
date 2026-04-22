@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Trash2, Mail } from 'lucide-react'
 import type { ContactMessage } from '@/lib/contact-messages'
@@ -18,18 +17,12 @@ function formatDate(iso: string) {
 }
 
 export default function AdminMessages() {
-  const router = useRouter()
   const [messages, setMessages] = useState<ContactMessage[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem('admin_authenticated')
-    if (!isAuthenticated) {
-      router.push('/admin')
-      return
-    }
     void load()
-  }, [router])
+  }, [])
 
   const load = async () => {
     setLoading(true)

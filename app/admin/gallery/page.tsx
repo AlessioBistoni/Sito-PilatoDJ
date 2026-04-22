@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
@@ -14,7 +13,6 @@ import {
 } from '@/lib/gallery'
 
 export default function AdminGallery() {
-  const router = useRouter()
   const [images, setImages] = useState<GalleryImage[]>([])
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
@@ -31,13 +29,8 @@ export default function AdminGallery() {
   const [isSitePlaceholder, setIsSitePlaceholder] = useState(false)
 
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem('admin_authenticated')
-    if (!isAuthenticated) {
-      router.push('/admin')
-      return
-    }
-    loadImages()
-  }, [router])
+    void loadImages()
+  }, [])
 
   const loadImages = async () => {
     try {

@@ -33,13 +33,8 @@ export default function AdminBlogAnteprimaPage() {
   }, [])
 
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem('admin_authenticated')
-    if (!isAuthenticated) {
-      router.push('/admin')
-      return
-    }
-    load()
-  }, [router, load])
+    void load()
+  }, [load])
 
   useEffect(() => {
     if (includeDrafts) {
