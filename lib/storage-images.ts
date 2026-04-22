@@ -1,5 +1,6 @@
 import sharp from 'sharp'
 import { getSupabase } from '@/lib/supabase'
+import { toGallerySquareJpegBuffer } from '@/lib/gallery-image-format'
 
 /** Estrae la chiave in bucket da un URL pubblico .../images/... */
 export function pathFromPublicImageUrl(imageUrl: string): string | null {
@@ -18,15 +19,20 @@ export async function removeStorageObjectByPublicUrl(imageUrl: string): Promise<
 export async function uploadJpegToImages(
   buffer: Buffer,
   storagePath: string,
-  opts: { maxEdge: number; quality: number }
+  opts: { maxEdge: number; quality: number; variant?: 'contain' | 'gallery-square' }
 ): Promise<string> {
-  const resized = await sharp(buffer)
-    .resize(opts.maxEdge, opts.maxEdge, {
-      fit: 'inside',
-      withoutEnlargement: true,
-    })
-    .jpeg({ quality: opts.quality })
-    .toBuffer()
+  const variant = opts.variant ?? 'contain'
+  const resized =
+    variant === 'gallery-square'
+      ? await toGallerySquareJpegBuffer(buffer, opts.quality)
+      : await sharp(buffer)
+          .rotate()
+          .resize(opts.maxEdge, opts.maxEdge, {
+            fit: 'inside',
+            withoutEnlargement: true,
+          })
+          .jpeg({ quality: opts.quality })
+          .toBuffer()
 
   const sb = getSupabase()
   const { error } = await sb.storage.from('images').upload(storagePath, resized, {

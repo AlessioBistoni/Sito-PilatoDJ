@@ -30,6 +30,10 @@ yarn-error.log*
 # Dev-only JSON store (senza Supabase)
 .pilato-dev/
 
+# Upload locali (solo sviluppo senza Supabase)
+/public/immagini/caricate/*
+!/public/immagini/caricate/.gitkeep
+
 # vercel
 .vercel
 

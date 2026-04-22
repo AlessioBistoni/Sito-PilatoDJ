@@ -4,7 +4,8 @@ import { motion } from 'framer-motion'
 import { FileText, Calendar, ArrowRight } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
+import { resolveBlogImageSrc } from '@/lib/blog-image-url'
+import BlogImage from '@/components/BlogImage'
 
 interface BlogPost {
   id: string
@@ -75,7 +76,9 @@ export default function BlogPreview() {
               <p className="text-gray-400 text-lg">Nessun articolo pubblicato al momento.</p>
             </div>
           ) : null}
-          {posts.map((post, index) => (
+          {posts.map((post, index) => {
+            const imageSrc = resolveBlogImageSrc(post.image)
+            return (
             <Link
               key={post.id}
               href="/blog"
@@ -86,45 +89,55 @@ export default function BlogPreview() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="glass-effect rounded-xl overflow-hidden hover:border-pink-500/50 transition-all group h-full flex flex-col cursor-pointer"
+                className={`group flex h-full w-full cursor-pointer items-center gap-3 rounded-xl border border-white/5 p-3 transition-all hover:border-pink-500/50 sm:gap-4 sm:p-4 ${
+                  imageSrc
+                    ? 'glass-effect flex-row'
+                    : 'glass-effect flex-col justify-center p-4 pt-6 sm:p-6'
+                } `}
               >
-                {post.image && (
-                  <div className="relative aspect-[16/10] w-full sm:aspect-[16/9] md:h-48 md:aspect-auto">
-                    <Image
+                {imageSrc && (
+                  <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-lg border border-white/5 bg-zinc-950/80 sm:h-24 sm:w-24">
+                    <BlogImage
                       src={post.image}
                       alt={post.title}
                       fill
-                      className="object-cover transition-transform duration-300 md:group-hover:scale-105"
-                      sizes="(max-width: 768px) 100vw, 33vw"
+                      objectFit="contain"
+                      className="transition-transform duration-300 group-hover:scale-[1.03]"
+                      sizes="96px"
                     />
                   </div>
                 )}
-                <div className="flex flex-1 flex-col p-4 sm:p-6">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="p-2 bg-gradient-to-br from-pink-500 to-purple-500 rounded-lg">
+                <div
+                  className={`flex min-w-0 flex-1 flex-col justify-center ${
+                    !imageSrc ? 'w-full' : ''
+                  }`}
+                >
+                  <div className="mb-2 flex items-center gap-2 sm:mb-2.5 sm:gap-3">
+                    <div className="shrink-0 rounded-lg bg-gradient-to-br from-pink-500 to-purple-500 p-1.5 sm:p-2">
                       <FileText className="text-white" size={20} />
                     </div>
-                    <div className="flex items-center space-x-2 text-gray-400 text-sm">
-                      <Calendar size={14} />
-                      <span>
+                    <div className="flex min-w-0 items-center gap-1.5 text-xs text-gray-400 sm:text-sm">
+                      <Calendar size={13} className="shrink-0 sm:w-3.5 sm:h-3.5" />
+                      <span className="truncate">
                         {new Date(post.date).toLocaleDateString('it-IT', {
                           day: 'numeric',
                           month: 'long',
-                          year: 'numeric'
+                          year: 'numeric',
                         })}
                       </span>
                     </div>
                   </div>
-                  <h3 className="mb-3 break-words text-lg font-bold text-white transition-colors group-hover:text-pink-500 sm:text-xl">
+                  <h3 className="mb-1.5 line-clamp-2 break-words text-base font-bold text-white transition-colors group-hover:text-pink-500 sm:mb-2 sm:text-lg">
                     {post.title}
                   </h3>
-                  <p className="text-gray-300 flex-1 line-clamp-4">
+                  <p className="line-clamp-3 text-sm leading-relaxed text-gray-300 sm:line-clamp-4 sm:text-base">
                     {post.content}
                   </p>
                 </div>
               </motion.article>
             </Link>
-          ))}
+            )
+          })}
         </div>
       </div>
     </section>

@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { uploadJpegToImages } from '@/lib/storage-images'
+import {
+  isLocalDevImageUploadEnabled,
+  saveLocalDevBlogJpeg,
+} from '@/lib/local-dev-image'
 
 export async function POST(request: NextRequest) {
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseConfigured() && !isLocalDevImageUploadEnabled()) {
     return NextResponse.json(
-      { error: 'Supabase non configurato (.env.local)' },
+      {
+        error:
+          'Storage non disponibile. Imposta NEXT_PUBLIC_SUPABASE_* in .env oppure usa `npm run dev` senza Supabase: l’immagine verrà salvata sotto public/immagini/caricate/.',
+      },
       { status: 503 }
     )
   }
@@ -21,17 +28,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Il file deve essere un\'immagine' }, { status: 400 })
     }
 
-    const timestamp = Date.now()
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const fileName = `blog/${timestamp}-${originalName}`
-
     const buffer = Buffer.from(await file.arrayBuffer())
-    const publicUrl = await uploadJpegToImages(buffer, fileName, {
-      maxEdge: 1400,
-      quality: 90,
-    })
+    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_') || 'image.jpg'
 
-    return NextResponse.json({ success: true, path: publicUrl })
+    let publicPath: string
+    if (isSupabaseConfigured()) {
+      const timestamp = Date.now()
+      const fileName = `blog/${timestamp}-${originalName}`
+      // fit 'inside' in storage: niente ingrandimenti, solo ridimensionamento se oltre il lato max
+      publicPath = await uploadJpegToImages(buffer, fileName, {
+        maxEdge: 1920,
+        quality: 92,
+      })
+    } else {
+      publicPath = await saveLocalDevBlogJpeg(buffer, originalName)
+    }
+
+    return NextResponse.json({ success: true, path: publicPath })
   } catch {
     return NextResponse.json(
       { error: 'Errore durante il caricamento dell\'immagine' },

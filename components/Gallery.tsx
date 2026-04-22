@@ -4,35 +4,40 @@ import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
-
-interface GalleryImage {
-  id: string
-  src: string
-  alt: string
-}
-
-const defaultImages = Array.from({ length: 8 }, (_, i) => ({
-  id: `default-${i + 1}`,
-  src: `/immagini/serate/${i + 1}.jpg`,
-  alt: `Serata ${i + 1}`,
-}))
+import {
+  type GalleryImage,
+  DEFAULT_GALLERY_IMAGES,
+  formatGalleryEventDate,
+  galleryAriaLabel,
+  galleryCaptionTitle,
+  parseGalleryListFromJson,
+} from '@/lib/gallery'
 
 export default function Gallery() {
-  const [images, setImages] = useState<GalleryImage[]>(defaultImages)
+  const [images, setImages] = useState<GalleryImage[]>([])
+  const [loadState, setLoadState] = useState<'loading' | 'ready'>('loading')
   const [selectedImage, setSelectedImage] = useState<number | null>(null)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
-        const response = await fetch('/api/data/gallery')
+        const response = await fetch('/api/data/gallery', { cache: 'no-store' })
         const data = await response.json()
-        const parsedImages = data.images || []
-        if (!cancelled) {
-          setImages(parsedImages.length > 0 ? parsedImages : defaultImages)
+        const configured = data.configured === true
+        const mapped = parseGalleryListFromJson(data.images)
+
+        if (cancelled) return
+
+        if (configured) {
+          setImages(mapped)
+        } else {
+          setImages(mapped.length > 0 ? mapped : DEFAULT_GALLERY_IMAGES)
         }
       } catch {
-        if (!cancelled) setImages(defaultImages)
+        if (!cancelled) setImages(DEFAULT_GALLERY_IMAGES)
+      } finally {
+        if (!cancelled) setLoadState('ready')
       }
     })()
     return () => {
@@ -52,6 +57,11 @@ export default function Gallery() {
       setSelectedImage((selectedImage - 1 + images.length) % images.length)
     }
   }
+
+  const lightboxImage = selectedImage !== null ? images[selectedImage] : null
+  const lightboxDateLine = lightboxImage
+    ? formatGalleryEventDate(lightboxImage.eventDate)
+    : ''
 
   return (
     <section id="gallery" className="section-y relative overflow-hidden">
@@ -75,8 +85,24 @@ export default function Gallery() {
           </p>
         </motion.div>
 
+        {loadState === 'loading' && (
+          <div className="flex min-h-[12rem] items-center justify-center text-gray-500">
+            <p className="text-sm sm:text-base">Caricamento galleria…</p>
+          </div>
+        )}
+
+        {loadState === 'ready' && images.length === 0 && (
+          <p className="text-center text-sm text-gray-400 sm:text-base">
+            Nessuna immagine in galleria.
+          </p>
+        )}
+
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-          {images.map((image, index) => (
+          {loadState === 'ready' &&
+            images.map((image, index) => {
+            const capTitle = galleryCaptionTitle(image)
+            const capDate = formatGalleryEventDate(image.eventDate)
+            return (
             <motion.div
               key={image.id}
               initial={{ opacity: 0, scale: 0.96 }}
@@ -93,7 +119,7 @@ export default function Gallery() {
                   openModal(index)
                 }
               }}
-              aria-label={`Apri immagine: ${image.alt}`}
+              aria-label={galleryAriaLabel(image)}
             >
               <Image
                 src={image.src}
@@ -102,12 +128,21 @@ export default function Gallery() {
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw"
                 className="object-cover transition-transform duration-300 md:group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100" />
-              <div className="absolute bottom-2 left-2 right-2 text-white sm:bottom-3 sm:left-3 sm:right-3 md:bottom-4 md:left-4 md:right-4">
-                <p className="line-clamp-2 text-xs font-semibold sm:text-sm">{image.alt}</p>
+              <div
+                className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/40 to-transparent p-2.5 text-left text-white transition-opacity duration-300 ease-out sm:p-3 md:p-4 opacity-100 md:opacity-0 md:group-hover:opacity-100"
+              >
+                <p className="line-clamp-2 text-xs font-bold leading-tight sm:text-sm">
+                  {capTitle}
+                </p>
+                {capDate ? (
+                  <p className="mt-1 line-clamp-2 text-[0.7rem] font-medium leading-tight text-cyan-200/95 sm:text-xs">
+                    {capDate}
+                  </p>
+                ) : null}
               </div>
             </motion.div>
-          ))}
+            )
+          })}
         </div>
       </div>
 
@@ -158,22 +193,33 @@ export default function Gallery() {
             </button>
 
             <div className="relative min-h-0 flex-1">
-              <Image
-                src={images[selectedImage].src}
-                alt={images[selectedImage].alt}
-                fill
-                className="object-contain"
-                sizes="100vw"
-                priority
-              />
+              {lightboxImage && (
+                <Image
+                  src={lightboxImage.src}
+                  alt={lightboxImage.alt}
+                  fill
+                  className="object-contain"
+                  sizes="100vw"
+                  priority
+                />
+              )}
             </div>
 
             <div className="shrink-0 px-2 pb-1 pt-3 text-center sm:pt-4">
-              <p className="text-sm font-semibold text-white sm:text-lg">
-                {images[selectedImage].alt}
-              </p>
-              <p className="mt-1 text-xs text-gray-400 sm:text-sm">
-                {selectedImage + 1} / {images.length}
+              {lightboxImage && (
+                <>
+                  <p className="text-sm font-semibold text-white sm:text-lg">
+                    {galleryCaptionTitle(lightboxImage)}
+                  </p>
+                  {lightboxDateLine ? (
+                    <p className="mt-1 text-sm text-cyan-200/90 sm:text-base">
+                      {lightboxDateLine}
+                    </p>
+                  ) : null}
+                </>
+              )}
+              <p className="mt-2 text-xs text-gray-400 sm:text-sm">
+                {selectedImage !== null ? selectedImage + 1 : 0} / {images.length}
               </p>
             </div>
           </motion.div>

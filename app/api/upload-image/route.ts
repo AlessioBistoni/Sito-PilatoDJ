@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { uploadJpegToImages } from '@/lib/storage-images'
+import {
+  isLocalDevImageUploadEnabled,
+  saveLocalDevGalleryJpeg,
+} from '@/lib/local-dev-image'
 
 export async function POST(request: NextRequest) {
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseConfigured() && !isLocalDevImageUploadEnabled()) {
     return NextResponse.json(
-      { error: 'Supabase non configurato (.env.local)' },
+      {
+        error:
+          'Supabase non configurato. In sviluppo (npm run dev) senza .env l’immagine si può salvare sotto public/; in produzione servono le variabili in Vercel.',
+      },
       { status: 503 }
     )
   }
@@ -22,19 +29,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Il file deve essere un\'immagine' }, { status: 400 })
     }
 
-    const timestamp = Date.now()
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const fileName = `serate/${timestamp}-${originalName}`
-
     const buffer = Buffer.from(await file.arrayBuffer())
-    const publicUrl = await uploadJpegToImages(buffer, fileName, {
-      maxEdge: 1200,
-      quality: 85,
-    })
+    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_') || 'image.jpg'
+
+    let publicPath: string
+    if (isSupabaseConfigured()) {
+      const timestamp = Date.now()
+      const fileName = `serate/${timestamp}-${originalName}`
+      publicPath = await uploadJpegToImages(buffer, fileName, {
+        maxEdge: 1200,
+        quality: 85,
+        variant: 'gallery-square',
+      })
+    } else {
+      publicPath = await saveLocalDevGalleryJpeg(buffer, originalName)
+    }
 
     return NextResponse.json({
       success: true,
-      path: publicUrl,
+      path: publicPath,
       alt: alt || originalName,
     })
   } catch {

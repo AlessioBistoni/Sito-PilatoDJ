@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Plus, Trash2, Image as ImageIcon } from 'lucide-react'
-
-interface GalleryImage {
-  id: string
-  src: string
-  alt: string
-}
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import {
+  type GalleryImage,
+  DEFAULT_GALLERY_IMAGES,
+  formatGalleryEventDate,
+  galleryCaptionTitle,
+  parseGalleryListFromJson,
+} from '@/lib/gallery'
 
 export default function AdminGallery() {
   const router = useRouter()
@@ -18,11 +19,16 @@ export default function AdminGallery() {
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
     alt: '',
+    eventTitle: '',
+    eventDate: '',
   })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [supabaseConfigured, setSupabaseConfigured] = useState<boolean | null>(null)
+  /** Stesse 8 anteprime del sito: senza `configured` l'API manda elenco vuoto. */
+  const [isSitePlaceholder, setIsSitePlaceholder] = useState(false)
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem('admin_authenticated')
@@ -35,12 +41,27 @@ export default function AdminGallery() {
 
   const loadImages = async () => {
     try {
-      const response = await fetch('/api/data/gallery')
+      const response = await fetch('/api/data/gallery', { cache: 'no-store' })
       const data = await response.json()
-      setImages(data.images || [])
+      if (typeof data.configured === 'boolean') {
+        setSupabaseConfigured(data.configured)
+      }
+
+      const configured = data.configured === true
+      const parsed = parseGalleryListFromJson(data.images)
+
+      if (configured) {
+        setImages(parsed)
+        setIsSitePlaceholder(false)
+      } else {
+        // Stessa logica del sito: senza app_data l'array è [] ma in homepage vedi le 8 predefinite
+        setImages(parsed.length > 0 ? parsed : DEFAULT_GALLERY_IMAGES)
+        setIsSitePlaceholder(parsed.length === 0)
+      }
     } catch (error) {
       console.error('Errore nel caricamento delle immagini:', error)
-      setImages([])
+      setImages(DEFAULT_GALLERY_IMAGES)
+      setIsSitePlaceholder(true)
     }
   }
 
@@ -85,10 +106,14 @@ export default function AdminGallery() {
         throw new Error(data.error || 'Errore durante l\'upload')
       }
 
+      const title = formData.eventTitle.trim()
+      const altText = formData.alt.trim() || title || data.alt
       const newImage: GalleryImage = {
         id: Date.now().toString(),
         src: data.path,
-        alt: data.alt,
+        alt: altText,
+        ...(title ? { eventTitle: title } : {}),
+        ...(formData.eventDate.trim() ? { eventDate: formData.eventDate.trim() } : {}),
       }
 
       const updatedImages = [...images, newImage]
@@ -103,7 +128,7 @@ export default function AdminGallery() {
       if (saveResponse.ok) {
         setImages(updatedImages)
         // Reset form
-        setFormData({ alt: '' })
+        setFormData({ alt: '', eventTitle: '', eventDate: '' })
         setSelectedFile(null)
         setPreview(null)
         setShowForm(false)
@@ -118,6 +143,13 @@ export default function AdminGallery() {
   }
 
   const handleDelete = async (id: string) => {
+    if (isSitePlaceholder) {
+      alert(
+        'Sono le stesse 8 anteprime mostrate in homepage. Per modificare l’elenco, configura lo storage in .env, poi carica e salva le tue immagini.'
+      )
+      return
+    }
+
     if (!confirm('Sei sicuro di voler eliminare questa immagine?')) {
       return
     }
@@ -125,33 +157,47 @@ export default function AdminGallery() {
     const imageToDelete = images.find(img => img.id === id)
     if (!imageToDelete) return
 
-    // Elimina il file da Vercel Blob Storage (se non è un'immagine locale)
-    if (!imageToDelete.id.startsWith('default-') && imageToDelete.src.startsWith('http')) {
-      try {
-        await fetch(`/api/delete-image?path=${encodeURIComponent(imageToDelete.src)}`, {
-          method: 'DELETE',
-        })
-      } catch (error) {
-        console.error('Errore durante l\'eliminazione del file:', error)
-      }
-    }
-
     const updatedImages = images.filter(img => img.id !== id)
-    
-    // Salva su API
+
     try {
       const response = await fetch('/api/data/gallery', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ images: updatedImages }),
+        cache: 'no-store',
       })
-      
-      if (response.ok) {
-        setImages(updatedImages)
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        const msg =
+          typeof (payload as { error?: string }).error === 'string'
+            ? (payload as { error: string }).error
+            : "Impossibile aggiornare l'elenco in database."
+        alert(msg)
+        return
+      }
+
+      setImages(updatedImages)
+
+      // Dopo il salvataggio, rimuove il file (Supabase o public/immagini/)
+      if (!imageToDelete.id.startsWith('default-')) {
+        const src = imageToDelete.src
+        const isRemote = src.startsWith('http://') || src.startsWith('https://')
+        const isLocalPublic = src.startsWith('/immagini/')
+        if (isRemote || isLocalPublic) {
+          try {
+            await fetch(`/api/delete-image?path=${encodeURIComponent(src)}`, {
+              method: 'DELETE',
+              cache: 'no-store',
+            })
+          } catch (error) {
+            console.error("Errore durante l'eliminazione del file:", error)
+          }
+        }
       }
     } catch (error) {
-      console.error('Errore nell\'eliminazione:', error)
-      alert('Errore nell\'eliminazione dell\'immagine')
+      console.error("Errore nell'eliminazione:", error)
+      alert("Errore nell'eliminazione dell'immagine")
     }
   }
 
@@ -180,6 +226,33 @@ export default function AdminGallery() {
             <span>Nuova Immagine</span>
           </button>
         </div>
+
+        {supabaseConfigured === false && (
+          <div
+            className="mb-6 rounded-lg border border-amber-600/50 bg-amber-950/40 p-4 text-amber-100"
+            role="status"
+          >
+            <p className="font-semibold">Supabase non configurato in questo ambiente</p>
+            <p className="mt-1 text-sm text-amber-200/90">
+              In <strong>sviluppo</strong> (senza <code className="rounded bg-black/30 px-1">.env.local</code>)
+              puoi comunque usare l&apos;admin: l&apos;elenco galleria si salva in{' '}
+              <code className="rounded bg-black/30 px-1">.pilato-dev/app-data.json</code> e
+              l&apos;upload scrive sotto <code className="rounded bg-black/30 px-1">public/immagini/caricate/</code>{' '}
+              (cartella in gitignore).
+            </p>
+            <p className="mt-2 text-xs text-amber-200/70">
+              In <strong>produzione</strong> (Vercel) imposta{' '}
+              <code className="rounded bg-black/30 px-1">NEXT_PUBLIC_SUPABASE_URL</code> e la chiave, e
+              lo storage su Supabase, così le immagini non stanno su disco del repo.
+            </p>
+            {isSitePlaceholder && (
+              <p className="mt-3 rounded-md border border-amber-500/30 bg-black/20 p-2 text-sm text-amber-100/95">
+                <strong>Griglia sotto:</strong> sono le stesse 8 serate d&apos;esempio che vedi in
+                homepage: l&apos;API non ha un elenco salvato, quindi prima sembrava vuota qui.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Form */}
         {showForm && (
@@ -218,17 +291,50 @@ export default function AdminGallery() {
               )}
 
               <div>
-                <label htmlFor="alt" className="block text-sm font-medium text-gray-300 mb-2">
-                  Descrizione
+                <label htmlFor="eventTitle" className="mb-2 block text-sm font-medium text-gray-300">
+                  Nome serata
+                </label>
+                <input
+                  type="text"
+                  id="eventTitle"
+                  value={formData.eventTitle}
+                  onChange={(e) => setFormData({ ...formData, eventTitle: e.target.value })}
+                  className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white transition-colors focus:outline-none focus:border-pink-500"
+                  placeholder="Es. Notte Rosa @ Thebris"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Compare in didascalia sul sito (con la data) con effetto mostra al passaggio del
+                  mouse.
+                </p>
+              </div>
+              <div>
+                <label htmlFor="eventDate" className="mb-2 block text-sm font-medium text-gray-300">
+                  Data serata
+                </label>
+                <input
+                  type="date"
+                  id="eventDate"
+                  value={formData.eventDate}
+                  onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
+                  className="max-w-xs rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white transition-colors focus:outline-none focus:border-pink-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="alt" className="mb-2 block text-sm font-medium text-gray-300">
+                  Testo alternativo (accessibilità)
                 </label>
                 <input
                   type="text"
                   id="alt"
                   value={formData.alt}
                   onChange={(e) => setFormData({ ...formData, alt: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-pink-500 transition-colors"
-                  placeholder="Es: Serata 9"
+                  className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white transition-colors focus:outline-none focus:border-pink-500"
+                  placeholder="Lasci vuoto per usare il nome file o la serata"
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  Se vuoto, in didascalia si usa il nome serata; per lettori di schermo conviene
+                  compilarlo.
+                </p>
               </div>
 
               {uploadError && (
@@ -249,7 +355,7 @@ export default function AdminGallery() {
                   type="button"
                   onClick={() => {
                     setShowForm(false)
-                    setFormData({ alt: '' })
+                    setFormData({ alt: '', eventTitle: '', eventDate: '' })
                     setSelectedFile(null)
                     setPreview(null)
                     setUploadError(null)
@@ -287,8 +393,17 @@ export default function AdminGallery() {
                 </div>
               </div>
               <div className="p-3">
-                <p className="text-white text-sm font-medium truncate">{image.alt}</p>
-                <p className="text-gray-400 text-xs truncate">{image.src}</p>
+                <p className="truncate text-sm font-medium text-pink-200">
+                  {galleryCaptionTitle(image)}
+                </p>
+                {formatGalleryEventDate(image.eventDate) ? (
+                  <p className="mt-0.5 truncate text-xs text-cyan-200/80">
+                    {formatGalleryEventDate(image.eventDate)}
+                  </p>
+                ) : null}
+                <p className="mt-1 truncate text-xs text-gray-500" title={image.src}>
+                  {image.alt}
+                </p>
               </div>
             </div>
           ))}

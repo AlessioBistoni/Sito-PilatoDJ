@@ -4,6 +4,7 @@ import {
   writeAppDataValue,
   isAppDataConfigured,
 } from '@/lib/app-data'
+import { normalizeGalleryStorageValue } from '@/lib/gallery'
 
 const STORAGE_KEY = 'pilato_dj_gallery'
 
@@ -14,7 +15,7 @@ export async function GET() {
   try {
     const value = await readAppDataValue(STORAGE_KEY)
     return NextResponse.json({
-      images: Array.isArray(value) ? value : [],
+      images: normalizeGalleryStorageValue(value),
       configured: true,
     })
   } catch {

@@ -1,23 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Trash2, FileText, Edit, Image as ImageIcon, X } from 'lucide-react'
-import Image from 'next/image'
+import { ArrowLeft, Plus, Trash2, FileText, Edit, X, Eye } from 'lucide-react'
+import type { BlogPost } from '@/lib/blog-types'
+import { normalizeBlogImageForStorage, resolveBlogImageSrc } from '@/lib/blog-image-url'
+import BlogImage from '@/components/BlogImage'
 
-interface BlogPost {
-  id: string
-  title: string
-  content: string
-  date: string
-  published: boolean
-  image?: string
-  imageCaption?: string
-}
-
-export default function AdminBlog() {
+function AdminBlogInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [posts, setPosts] = useState<BlogPost[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null)
@@ -33,6 +26,10 @@ export default function AdminBlog() {
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
 
+  /** Evita che l’idrazione da `?new=1` / `?edit=id` (che dipende da `posts`) riscriva il form e cancelli upload o testo non ancora salvato. */
+  const newQueryDoneRef = useRef(false)
+  const lastEditHydratedIdRef = useRef<string | null>(null)
+
   useEffect(() => {
     const isAuthenticated = localStorage.getItem('admin_authenticated')
     if (!isAuthenticated) {
@@ -44,7 +41,7 @@ export default function AdminBlog() {
 
   const loadPosts = async () => {
     try {
-      const response = await fetch('/api/data/blog')
+      const response = await fetch('/api/data/blog', { cache: 'no-store' })
       const data = await response.json()
       setPosts(data.posts || [])
     } catch (error) {
@@ -53,23 +50,82 @@ export default function AdminBlog() {
     }
   }
 
+  useEffect(() => {
+    const fromEdit = searchParams.get('edit')
+    const fromNew = searchParams.get('new')
+
+    if (fromNew === '1') {
+      if (!newQueryDoneRef.current) {
+        newQueryDoneRef.current = true
+        setShowForm(true)
+        setEditingPost(null)
+        setFormData({ title: '', content: '', published: true, image: '', imageCaption: '' })
+        setSelectedFile(null)
+        setPreview(null)
+        setUploadError(null)
+        router.replace('/admin/blog', { scroll: false })
+      }
+      return
+    }
+    if (fromNew != '1') {
+      newQueryDoneRef.current = false
+    }
+
+    if (fromEdit && posts.length > 0) {
+      if (lastEditHydratedIdRef.current === fromEdit) {
+        return
+      }
+      const p = posts.find((post) => post.id === fromEdit)
+      if (p) {
+        lastEditHydratedIdRef.current = fromEdit
+        setEditingPost(p)
+        setFormData({
+          title: p.title,
+          content: p.content,
+          published: p.published,
+          image: p.image || '',
+          imageCaption: p.imageCaption || '',
+        })
+        if (p.image) {
+          setPreview(resolveBlogImageSrc(p.image))
+        } else {
+          setPreview(null)
+        }
+        setShowForm(true)
+        setSelectedFile(null)
+        setUploadError(null)
+        router.replace('/admin/blog', { scroll: false })
+      }
+      return
+    }
+
+    if (!fromEdit) {
+      lastEditHydratedIdRef.current = null
+    }
+  }, [searchParams, posts, router])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
+    const imageForSave = formData.image
+      ? normalizeBlogImageForStorage(formData.image)
+      : ''
+    const payload = { ...formData, image: imageForSave }
+
     let updatedPosts: BlogPost[]
-    
+
     if (editingPost) {
       // Modifica post esistente
-      updatedPosts = posts.map(post =>
+      updatedPosts = posts.map((post) =>
         post.id === editingPost.id
-          ? { ...formData, id: editingPost.id, date: editingPost.date }
+          ? { ...payload, id: editingPost.id, date: editingPost.date }
           : post
       )
     } else {
       // Nuovo post
       const newPost: BlogPost = {
         id: Date.now().toString(),
-        ...formData,
+        ...payload,
         date: new Date().toISOString(),
       }
       updatedPosts = [newPost, ...posts]
@@ -98,45 +154,29 @@ export default function AdminBlog() {
     }
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setSelectedFile(file)
-      setUploadError(null)
-      // Crea preview
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const handleImageUpload = async () => {
-    if (!selectedFile) {
-      setUploadError('Seleziona un\'immagine')
+  const uploadImageFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Seleziona un file immagine')
       return
     }
-
     setUploading(true)
     setUploadError(null)
-
     try {
       const uploadFormData = new FormData()
-      uploadFormData.append('file', selectedFile)
-
+      uploadFormData.append('file', file)
       const response = await fetch('/api/upload-blog-image', {
         method: 'POST',
         body: uploadFormData,
       })
-
-      const data = await response.json()
-
+      const data = (await response.json()) as { error?: string; path?: string }
       if (!response.ok) {
         throw new Error(data.error || 'Errore durante l\'upload')
       }
-
-      setFormData({ ...formData, image: data.path })
+      const imageUrl = typeof data.path === 'string' ? data.path : undefined
+      if (!imageUrl) {
+        throw new Error('Risposta upload senza URL immagine')
+      }
+      setFormData((prev) => ({ ...prev, image: imageUrl }))
       setSelectedFile(null)
       setPreview(null)
     } catch (error) {
@@ -146,8 +186,32 @@ export default function AdminBlog() {
     }
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) {
+      return
+    }
+    setSelectedFile(file)
+    setUploadError(null)
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setPreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+    void uploadImageFile(file)
+  }
+
+  const handleImageUpload = () => {
+    if (!selectedFile) {
+      setUploadError('Seleziona un\'immagine')
+      return
+    }
+    void uploadImageFile(selectedFile)
+  }
+
   const handleRemoveImage = () => {
-    setFormData({ ...formData, image: '', imageCaption: '' })
+    setFormData((prev) => ({ ...prev, image: '', imageCaption: '' }))
     setSelectedFile(null)
     setPreview(null)
   }
@@ -162,8 +226,7 @@ export default function AdminBlog() {
       imageCaption: post.imageCaption || '',
     })
     if (post.image) {
-      // Se l'immagine è già caricata, mostra il percorso completo
-      setPreview(post.image.startsWith('/') ? post.image : `/${post.image}`)
+      setPreview(resolveBlogImageSrc(post.image))
     }
     setShowForm(true)
   }
@@ -243,20 +306,30 @@ export default function AdminBlog() {
               <p className="text-gray-400">Pubblica aggiornamenti e pensieri</p>
             </div>
           </div>
-          <button
-            onClick={() => {
-              setShowForm(!showForm)
-              setEditingPost(null)
-              setFormData({ title: '', content: '', published: true, image: '', imageCaption: '' })
-              setSelectedFile(null)
-              setPreview(null)
-              setUploadError(null)
-            }}
-            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg text-white hover:from-pink-600 hover:to-purple-600 transition-colors"
-          >
-            <Plus size={20} />
-            <span>Nuovo Post</span>
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Link
+              href="/admin/blog/anteprima"
+              className="inline-flex items-center space-x-2 rounded-lg border border-white/20 px-4 py-2 text-sm text-white/90 transition hover:border-pink-500/50 hover:text-pink-200"
+            >
+              <Eye size={18} />
+              <span className="hidden sm:inline">Vista come utente</span>
+              <span className="sm:hidden">Anteprima</span>
+            </Link>
+            <button
+              onClick={() => {
+                setShowForm(!showForm)
+                setEditingPost(null)
+                setFormData({ title: '', content: '', published: true, image: '', imageCaption: '' })
+                setSelectedFile(null)
+                setPreview(null)
+                setUploadError(null)
+              }}
+              className="flex items-center space-x-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-500 px-4 py-2 text-white transition hover:from-pink-600 hover:to-purple-600"
+            >
+              <Plus size={20} />
+              <span>Nuovo Post</span>
+            </button>
+          </div>
         </div>
 
         {/* Form */}
@@ -287,12 +360,12 @@ export default function AdminBlog() {
                 </label>
                 {formData.image ? (
                   <div className="mb-4">
-                    <div className="relative w-full h-64 rounded-lg overflow-hidden border border-gray-600 mb-2">
-                      <Image
-                        src={formData.image.startsWith('/') ? formData.image : `/${formData.image}`}
+                    <div className="relative w-full h-64 rounded-lg overflow-hidden border border-gray-600 bg-zinc-950/80 mb-2">
+                      <BlogImage
+                        src={formData.image}
                         alt="Preview"
                         fill
-                        className="object-cover"
+                        objectFit="contain"
                       />
                     </div>
                     <div className="flex items-center space-x-2">
@@ -322,11 +395,11 @@ export default function AdminBlog() {
                       className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-pink-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-pink-500 file:text-white hover:file:bg-pink-600 file:cursor-pointer"
                     />
                     {preview && (
-                      <div className="relative w-full h-48 rounded-lg overflow-hidden border border-gray-600">
+                      <div className="relative w-full h-48 rounded-lg overflow-hidden border border-gray-600 bg-zinc-950/80">
                         <img
                           src={preview}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
+                          alt="Anteprima file"
+                          className="h-full w-full object-contain"
                         />
                       </div>
                     )}
@@ -344,7 +417,9 @@ export default function AdminBlog() {
                       <p className="text-red-400 text-sm">{uploadError}</p>
                     )}
                     <p className="text-gray-500 text-xs">
-                      L'immagine verrà ridimensionata automaticamente (max 1400px di larghezza)
+                      Dopo aver scelto un file, il caricamento parte da solo: aspetta che finisca, poi
+                      salva il post. In locale senza Supabase il file finisce sotto{' '}
+                      <code className="text-gray-400">public/immagini/caricate/</code>.
                     </p>
                   </div>
                 )}
@@ -410,7 +485,9 @@ export default function AdminBlog() {
               <p className="text-gray-400">Nessun post pubblicato</p>
             </div>
           ) : (
-            posts.map((post) => (
+            posts.map((post) => {
+              const postImageSrc = resolveBlogImageSrc(post.image)
+              return (
               <div
                 key={post.id}
                 className={`bg-gray-800 border rounded-lg p-6 ${
@@ -436,13 +513,13 @@ export default function AdminBlog() {
                         minute: '2-digit'
                       })}
                     </p>
-                    {post.image && (
-                      <div className="relative w-full max-w-md h-48 rounded-lg overflow-hidden border border-gray-600 mb-3">
-                        <Image
-                          src={post.image.startsWith('/') ? post.image : `/${post.image}`}
+                    {postImageSrc && (
+                      <div className="relative mb-3 h-48 w-full max-w-md overflow-hidden rounded-lg border border-gray-600 bg-zinc-950/80">
+                        <BlogImage
+                          src={post.image}
                           alt={post.title}
                           fill
-                          className="object-cover"
+                          objectFit="contain"
                         />
                       </div>
                     )}
@@ -477,11 +554,26 @@ export default function AdminBlog() {
                   </button>
                 </div>
               </div>
-            ))
+              )
+            })
           )}
         </div>
       </div>
     </div>
+  )
+}
+
+export default function AdminBlogPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-900 p-6 text-center text-gray-400">
+          Caricamento…
+        </div>
+      }
+    >
+      <AdminBlogInner />
+    </Suspense>
   )
 }
 
