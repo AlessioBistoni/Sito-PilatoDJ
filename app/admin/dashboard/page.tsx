@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Calendar, Image as ImageIcon, FileText, LogOut, Settings } from 'lucide-react'
+import { Calendar, Image as ImageIcon, FileText, LogOut, Users } from 'lucide-react'
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const [stats, setStats] = useState({ dates: 0, images: 0, posts: 0 })
+  const [stats, setStats] = useState({ dates: 0, images: 0, posts: 0, partners: 0 })
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -21,20 +21,23 @@ export default function AdminDashboard() {
     // Carica statistiche
     const loadStats = async () => {
       try {
-        const [datesRes, imagesRes, postsRes] = await Promise.all([
+        const [datesRes, imagesRes, postsRes, collabRes] = await Promise.all([
           fetch('/api/data/dates'),
           fetch('/api/data/gallery'),
           fetch('/api/data/blog'),
+          fetch('/api/data/collaborations'),
         ])
-        
+
         const datesData = await datesRes.json()
         const imagesData = await imagesRes.json()
         const postsData = await postsRes.json()
-        
+        const collabData = await collabRes.json()
+
         setStats({
           dates: datesData.dates?.length || 0,
           images: imagesData.images?.length || 0,
           posts: postsData.posts?.length || 0,
+          partners: collabData.partners?.length || 0,
         })
       } catch (error) {
         console.error('Errore nel caricamento delle statistiche:', error)
@@ -71,6 +74,13 @@ export default function AdminDashboard() {
       href: '/admin/blog',
       color: 'from-blue-500 to-purple-500',
     },
+    {
+      title: 'Collaborazioni',
+      description: 'Loghi dei partner in homepage',
+      icon: Users,
+      href: '/admin/collaborations',
+      color: 'from-fuchsia-500 to-violet-500',
+    },
   ]
 
   return (
@@ -92,7 +102,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Menu Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {menuItems.map((item) => {
             const Icon = item.icon
             return (
@@ -114,7 +124,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Stats */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
             <h3 className="text-gray-400 text-sm mb-2">Date Attive</h3>
             <p className="text-3xl font-bold text-white">{stats.dates}</p>
@@ -126,6 +136,10 @@ export default function AdminDashboard() {
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
             <h3 className="text-gray-400 text-sm mb-2">Post Blog</h3>
             <p className="text-3xl font-bold text-white">{stats.posts}</p>
+          </div>
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+            <h3 className="text-gray-400 text-sm mb-2">Partner collaborazioni</h3>
+            <p className="text-3xl font-bold text-white">{stats.partners}</p>
           </div>
         </div>
       </div>

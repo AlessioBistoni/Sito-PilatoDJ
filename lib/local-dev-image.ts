@@ -49,6 +49,26 @@ export async function saveLocalDevBlogJpeg(
   return `${CARICATE_PATH}${base}`
 }
 
+/** Logo collaborazione in dev: stesso percorso delle altre statiche, dimensione contenuta per i loghi. */
+export async function saveLocalDevCollaborationLogoJpeg(
+  buffer: Buffer,
+  originalName: string
+): Promise<string> {
+  const timestamp = Date.now()
+  const safe = (originalName || 'image').replace(/[^a-zA-Z0-9.-]/g, '_')
+  const base = `collab-dev-${timestamp}-${safe.replace(/\.[^.]+$/i, '')}.jpg`
+  const dir = path.join(process.cwd(), 'public', 'immagini', 'caricate')
+  await fs.mkdir(dir, { recursive: true })
+  const resized = await sharp(buffer)
+    .rotate()
+    .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 90 })
+    .toBuffer()
+  const fullPath = path.join(dir, base)
+  await fs.writeFile(fullPath, resized)
+  return `${CARICATE_PATH}${base}`
+}
+
 /**
  * Rimuove un file sotto `public/immagini/` (caricate, serate con nomi “upload” ecc.),
  * ma non le 8 serate d’esempio (`serate/1.jpg` … `serate/8.jpg`).
